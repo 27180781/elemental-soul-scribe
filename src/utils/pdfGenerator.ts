@@ -158,6 +158,26 @@ const createProfileHTML = (profile: ParticipantProfile): HTMLElement => {
           <img src="${pieChartDataUrl}" style="width: 400px; height: auto; display: block;" />
         </div>
 
+        <!-- Legend -->
+        <div style="display: flex; justify-content: center; gap: 20px; margin: 15px 0; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 20px; height: 20px; background: ${ELEMENT_COLORS.fire.primary}; border-radius: 4px;"></div>
+            <span style="font-size: 16px; font-weight: bold; color: #1e293b;">🔥 ${ELEMENT_NAMES.fire}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 20px; height: 20px; background: ${ELEMENT_COLORS.water.primary}; border-radius: 4px;"></div>
+            <span style="font-size: 16px; font-weight: bold; color: #1e293b;">💧 ${ELEMENT_NAMES.water}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 20px; height: 20px; background: ${ELEMENT_COLORS.air.primary}; border-radius: 4px;"></div>
+            <span style="font-size: 16px; font-weight: bold; color: #1e293b;">💨 ${ELEMENT_NAMES.air}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 20px; height: 20px; background: ${ELEMENT_COLORS.earth.primary}; border-radius: 4px;"></div>
+            <span style="font-size: 16px; font-weight: bold; color: #1e293b;">🌍 ${ELEMENT_NAMES.earth}</span>
+          </div>
+        </div>
+
         ${profile.matchedPersonality ? `
           <div style="background: rgba(255, 255, 255, 0.95); padding: 20px 25px; border-radius: 16px; margin-top: 20px; border: 2px solid #5b21b6; box-shadow: 0 4px 12px rgba(91, 33, 182, 0.2); width: 100%; max-width: 600px;">
             <div style="text-align: center; margin-bottom: 12px;">
