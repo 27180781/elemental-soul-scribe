@@ -17,11 +17,11 @@ export const downloadElementMappingTemplate = () => {
 
 export const downloadPersonalityTypesTemplate = () => {
   const data = [
-    ['מספר אישיות', 'אחוז אש', 'אחוז מים', 'אחוז רוח', 'אחוז עפר', 'תיאור'],
-    [1, 40, 20, 25, 15, 'אישיות דומיננטית באש - נמרץ ומלא אנרגיה'],
-    [2, 20, 40, 15, 25, 'אישיות דומיננטית במים - רגשי ואמפתי'],
-    [3, 25, 15, 40, 20, 'אישיות דומיננטית ברוח - אינטלקטואל וחופשי'],
-    [4, 15, 25, 20, 40, 'אישיות דומיננטית בעפר - מעשי ויציב'],
+    ['מספר אישיות', 'שם אישיות (אופציונלי)', 'אחוז אש', 'אחוז מים', 'אחוז רוח', 'אחוז עפר', 'תיאור'],
+    [1, 'מנהיג', 40, 20, 25, 15, 'אישיות דומיננטית באש - נמרץ ומלא אנרגיה'],
+    [2, '', 20, 40, 15, 25, 'אישיות דומיננטית במים - רגשי ואמפתי'],
+    [3, 'חולם', 25, 15, 40, 20, 'אישיות דומיננטית ברוח - אינטלקטואל וחופשי'],
+    [4, '', 15, 25, 20, 40, 'אישיות דומיננטית בעפר - מעשי ויציב'],
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(data);
@@ -93,16 +93,18 @@ export const parsePersonalityTypesExcel = async (file: File): Promise<Personalit
           if (!row[0]) continue; // Skip empty rows
 
           const number = parseInt(row[0]);
-          const fire = parseFloat(row[1]) || 0;
-          const water = parseFloat(row[2]) || 0;
-          const air = parseFloat(row[3]) || 0;
-          const earth = parseFloat(row[4]) || 0;
-          const description = row[5]?.toString() || '';
+          const name = row[1]?.toString().trim() || undefined;
+          const fire = parseFloat(row[2]) || 0;
+          const water = parseFloat(row[3]) || 0;
+          const air = parseFloat(row[4]) || 0;
+          const earth = parseFloat(row[5]) || 0;
+          const description = row[6]?.toString() || '';
 
           if (!isNaN(number)) {
             types.push({
               id: Date.now().toString() + '-' + number,
               number,
+              name: name || undefined,
               description,
               percentages: { fire, water, air, earth },
             });

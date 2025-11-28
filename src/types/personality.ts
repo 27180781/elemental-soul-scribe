@@ -10,6 +10,7 @@ export interface ElementMapping {
 export interface PersonalityType {
   id: string;
   number: number;
+  name?: string; // Optional name for the personality type
   description: string;
   percentages: {
     fire: number;

@@ -15,6 +15,7 @@ const PersonalityTypeManager = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Omit<PersonalityType, 'id'>>({
     number: 1,
+    name: undefined,
     description: "",
     percentages: { fire: 25, water: 25, air: 25, earth: 25 },
   });
@@ -22,6 +23,7 @@ const PersonalityTypeManager = () => {
   const resetForm = () => {
     setFormData({
       number: 1,
+      name: undefined,
       description: "",
       percentages: { fire: 25, water: 25, air: 25, earth: 25 },
     });
@@ -61,6 +63,7 @@ const PersonalityTypeManager = () => {
   const startEdit = (type: PersonalityType) => {
     setFormData({
       number: type.number,
+      name: type.name,
       description: type.description,
       percentages: { ...type.percentages },
     });
@@ -130,6 +133,16 @@ const PersonalityTypeManager = () => {
               value={formData.number}
               onChange={(e) => setFormData({ ...formData, number: parseInt(e.target.value) || 1 })}
               placeholder="לדוגמה: 1"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>שם אישיות (אופציונלי)</Label>
+            <Input
+              type="text"
+              value={formData.name || ''}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value.trim() || undefined })}
+              placeholder="למשל: מנהיג, חולם, וכו..."
             />
           </div>
 
@@ -230,7 +243,10 @@ const PersonalityTypeManager = () => {
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-lg">אישיות מספר {type.number}</h4>
+                    <h4 className="font-semibold text-lg">
+                      אישיות מספר {type.number}
+                      {type.name && <span className="text-primary mr-2">- {type.name}</span>}
+                    </h4>
                     <p className="text-sm text-muted-foreground mt-1">{type.description}</p>
                   </div>
                   <div className="flex gap-2">

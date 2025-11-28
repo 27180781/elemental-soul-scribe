@@ -161,6 +161,7 @@ const Results = () => {
                     <div className="space-y-2 text-right">
                       <h3 className="font-bold text-lg">
                         אישיות מספר {profile.matchedPersonality.number}
+                        {profile.matchedPersonality.name && ` - ${profile.matchedPersonality.name}`}
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         {profile.matchedPersonality.description}
