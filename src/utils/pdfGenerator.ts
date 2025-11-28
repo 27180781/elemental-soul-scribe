@@ -143,64 +143,54 @@ const createProfileHTML = (profile: ParticipantProfile): HTMLElement => {
       <img src="${pdfTemplate}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;" />
       
       <!-- Content Container with proper margins -->
-      <div style="position: absolute; top: 80px; left: 60px; right: 60px; bottom: 120px; display: flex; flex-direction: column; align-items: center;">
+      <div style="position: absolute; top: 120px; left: 60px; right: 60px; bottom: 80px; display: flex; flex-direction: column; align-items: center;">
         
         <!-- Header -->
-        <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #1e293b; font-size: 36px; margin: 0 0 10px 0; font-weight: bold;">
+        <div style="text-align: center; margin-bottom: 40px;">
+          <h1 style="color: #1e293b; font-size: 40px; margin: 0 0 10px 0; font-weight: bold;">
             משתתף מספר ${profile.id}
           </h1>
-          ${profile.name ? `<h2 style="color: #475569; font-size: 24px; margin: 0;">${profile.name}</h2>` : ''}
+          ${profile.name ? `<h2 style="color: #475569; font-size: 28px; margin: 0;">${profile.name}</h2>` : ''}
         </div>
 
         <!-- 3D Pie Chart -->
-        <div style="margin: 20px 0;">
-          <img src="${pieChartDataUrl}" style="width: 400px; height: auto; display: block;" />
+        <div style="margin: 30px 0;">
+          <img src="${pieChartDataUrl}" style="width: 450px; height: auto; display: block;" />
         </div>
 
-        <!-- Element Legend -->
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; width: 100%; max-width: 500px; margin: 25px 0;">
-          <div style="display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); padding: 12px; border-radius: 12px; border: 2px solid #f97316;">
-            <span style="font-size: 28px;">🔥</span>
-            <div style="text-align: right;">
-              <div style="font-size: 16px; font-weight: bold; color: #f97316;">${ELEMENT_NAMES.fire}</div>
-              <div style="font-size: 20px; font-weight: bold; color: #ea580c;">${profile.elementScores.fire.toFixed(1)}%</div>
+        <!-- Element Breakdown -->
+        <div style="width: 100%; max-width: 650px; margin: 30px 0;">
+          <h3 style="text-align: center; color: #1e293b; font-size: 24px; font-weight: bold; margin-bottom: 20px;">פירוט יסודות</h3>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+            <div style="text-align: center; padding: 15px; background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border-radius: 12px; border: 2px solid #f97316;">
+              <div style="font-size: 32px; margin-bottom: 8px;">🔥</div>
+              <div style="font-size: 18px; font-weight: bold; color: #f97316; margin-bottom: 4px;">${ELEMENT_NAMES.fire}</div>
+              <div style="font-size: 24px; font-weight: bold; color: #ea580c;">${profile.elementScores.fire.toFixed(1)}%</div>
             </div>
-          </div>
-          
-          <div style="display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 12px; border-radius: 12px; border: 2px solid #0ea5e9;">
-            <span style="font-size: 28px;">💧</span>
-            <div style="text-align: right;">
-              <div style="font-size: 16px; font-weight: bold; color: #0ea5e9;">${ELEMENT_NAMES.water}</div>
-              <div style="font-size: 20px; font-weight: bold; color: #0284c7;">${profile.elementScores.water.toFixed(1)}%</div>
+            
+            <div style="text-align: center; padding: 15px; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 12px; border: 2px solid #0ea5e9;">
+              <div style="font-size: 32px; margin-bottom: 8px;">💧</div>
+              <div style="font-size: 18px; font-weight: bold; color: #0ea5e9; margin-bottom: 4px;">${ELEMENT_NAMES.water}</div>
+              <div style="font-size: 24px; font-weight: bold; color: #0284c7;">${profile.elementScores.water.toFixed(1)}%</div>
             </div>
-          </div>
-          
-          <div style="display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%); padding: 12px; border-radius: 12px; border: 2px solid #22d3ee;">
-            <span style="font-size: 28px;">💨</span>
-            <div style="text-align: right;">
-              <div style="font-size: 16px; font-weight: bold; color: #22d3ee;">${ELEMENT_NAMES.air}</div>
-              <div style="font-size: 20px; font-weight: bold; color: #06b6d4;">${profile.elementScores.air.toFixed(1)}%</div>
+            
+            <div style="text-align: center; padding: 15px; background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%); border-radius: 12px; border: 2px solid #22d3ee;">
+              <div style="font-size: 32px; margin-bottom: 8px;">💨</div>
+              <div style="font-size: 18px; font-weight: bold; color: #22d3ee; margin-bottom: 4px;">${ELEMENT_NAMES.air}</div>
+              <div style="font-size: 24px; font-weight: bold; color: #06b6d4;">${profile.elementScores.air.toFixed(1)}%</div>
             </div>
-          </div>
-          
-          <div style="display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #f7fee7 0%, #ecfccb 100%); padding: 12px; border-radius: 12px; border: 2px solid #84cc16;">
-            <span style="font-size: 28px;">🌍</span>
-            <div style="text-align: right;">
-              <div style="font-size: 16px; font-weight: bold; color: #84cc16;">${ELEMENT_NAMES.earth}</div>
-              <div style="font-size: 20px; font-weight: bold; color: #65a30d;">${profile.elementScores.earth.toFixed(1)}%</div>
+            
+            <div style="text-align: center; padding: 15px; background: linear-gradient(135deg, #f7fee7 0%, #ecfccb 100%); border-radius: 12px; border: 2px solid #84cc16;">
+              <div style="font-size: 32px; margin-bottom: 8px;">🌍</div>
+              <div style="font-size: 18px; font-weight: bold; color: #84cc16; margin-bottom: 4px;">${ELEMENT_NAMES.earth}</div>
+              <div style="font-size: 24px; font-weight: bold; color: #65a30d;">${profile.elementScores.earth.toFixed(1)}%</div>
             </div>
           </div>
         </div>
 
         ${profile.matchedPersonality ? `
-          <div style="background: rgba(255, 255, 255, 0.95); padding: 20px 25px; border-radius: 16px; margin-top: 20px; border: 2px solid #5b21b6; box-shadow: 0 4px 12px rgba(91, 33, 182, 0.2); width: 100%; max-width: 600px;">
-            <div style="text-align: center; margin-bottom: 12px;">
-              <span style="display: inline-block; background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%); color: white; padding: 8px 20px; border-radius: 20px; font-size: 22px; font-weight: bold;">
-                אישיות מספר ${profile.matchedPersonality.number}${profile.matchedPersonality.name ? ` - ${profile.matchedPersonality.name}` : ''}
-              </span>
-            </div>
-            <div style="line-height: 1.7; font-size: 16px; color: #1e293b; text-align: center;">
+          <div style="background: rgba(255, 255, 255, 0.95); padding: 25px 30px; border-radius: 16px; margin-top: 30px; border: 2px solid #5b21b6; box-shadow: 0 4px 12px rgba(91, 33, 182, 0.2); width: 100%; max-width: 650px;">
+            <div style="line-height: 1.8; font-size: 18px; color: #1e293b; text-align: center;">
               ${profile.matchedPersonality.description}
             </div>
           </div>
