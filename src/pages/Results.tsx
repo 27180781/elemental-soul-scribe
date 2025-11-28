@@ -13,9 +13,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { Download, Sparkles, FileDown, Trash2 } from "lucide-react";
+import { Download, Sparkles, FileDown, Trash2, Home } from "lucide-react";
 import { generatePDF, generateAllPDFs } from "@/utils/pdfGenerator";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const ELEMENT_COLORS = {
   fire: "hsl(var(--fire))",
@@ -33,6 +34,7 @@ const ELEMENT_NAMES = {
 
 const Results = () => {
   const { participantProfiles, resetParticipantData } = useData();
+  const navigate = useNavigate();
 
   const handleResetAll = () => {
     resetParticipantData();
@@ -58,13 +60,24 @@ const Results = () => {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold bg-gradient-mystical bg-clip-text text-transparent">
-            תוצאות ופרופילי אישיות
-          </h1>
-          <p className="text-muted-foreground">
-            {participantProfiles.length} משתתפים נותחו
-          </p>
+        <div className="flex items-center justify-center gap-4 relative">
+          <Button
+            onClick={() => navigate("/")}
+            variant="outline"
+            size="sm"
+            className="absolute right-0 gap-2"
+          >
+            <Home className="h-4 w-4" />
+            מסך ראשי
+          </Button>
+          <div className="text-center space-y-2">
+            <h1 className="text-4xl font-bold bg-gradient-mystical bg-clip-text text-transparent">
+              תוצאות ופרופילי אישיות
+            </h1>
+            <p className="text-muted-foreground">
+              {participantProfiles.length} משתתפים נותחו
+            </p>
+          </div>
         </div>
 
         <div className="flex gap-3 justify-center flex-wrap">
