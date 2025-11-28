@@ -47,6 +47,22 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        fire: {
+          DEFAULT: "hsl(var(--fire))",
+          foreground: "hsl(var(--fire-foreground))",
+        },
+        water: {
+          DEFAULT: "hsl(var(--water))",
+          foreground: "hsl(var(--water-foreground))",
+        },
+        air: {
+          DEFAULT: "hsl(var(--air))",
+          foreground: "hsl(var(--air-foreground))",
+        },
+        earth: {
+          DEFAULT: "hsl(var(--earth))",
+          foreground: "hsl(var(--earth-foreground))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -57,6 +73,10 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+      },
+      backgroundImage: {
+        'gradient-mystical': 'var(--gradient-mystical)',
+        'gradient-elemental': 'var(--gradient-elemental)',
       },
       borderRadius: {
         lg: "var(--radius)",
