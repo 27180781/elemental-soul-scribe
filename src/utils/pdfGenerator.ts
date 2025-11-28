@@ -11,10 +11,10 @@ const ELEMENT_NAMES = {
 };
 
 const ELEMENT_COLORS = {
-  fire: { primary: '#f97316', secondary: '#fb923c', shadow: '#ea580c' },
-  water: { primary: '#0ea5e9', secondary: '#38bdf8', shadow: '#0284c7' },
-  air: { primary: '#22d3ee', secondary: '#67e8f9', shadow: '#06b6d4' },
-  earth: { primary: '#84cc16', secondary: '#a3e635', shadow: '#65a30d' },
+  fire: { primary: '#dc2626', secondary: '#ef4444', shadow: '#b91c1c' },
+  water: { primary: '#2563eb', secondary: '#3b82f6', shadow: '#1d4ed8' },
+  air: { primary: '#16a34a', secondary: '#22c55e', shadow: '#15803d' },
+  earth: { primary: '#92400e', secondary: '#b45309', shadow: '#78350f' },
 };
 
 const create3DPieChart = (elementScores: any, width: number, height: number): string => {
