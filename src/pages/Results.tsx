@@ -1,9 +1,21 @@
 import { useData } from "@/contexts/DataContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
-import { Download, Sparkles } from "lucide-react";
-import { generatePDF } from "@/utils/pdfGenerator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { Download, Sparkles, FileDown, Trash2 } from "lucide-react";
+import { generatePDF, generateAllPDFs } from "@/utils/pdfGenerator";
+import { toast } from "sonner";
 
 const ELEMENT_COLORS = {
   fire: "hsl(var(--fire))",
@@ -20,7 +32,12 @@ const ELEMENT_NAMES = {
 };
 
 const Results = () => {
-  const { participantProfiles } = useData();
+  const { participantProfiles, resetAllData } = useData();
+
+  const handleResetAll = () => {
+    resetAllData();
+    toast.success("כל הנתונים נמחקו בהצלחה");
+  };
 
   if (!participantProfiles.length) {
     return (
@@ -48,6 +65,47 @@ const Results = () => {
           <p className="text-muted-foreground">
             {participantProfiles.length} משתתפים נותחו
           </p>
+        </div>
+
+        <div className="flex gap-3 justify-center flex-wrap">
+          <Button
+            onClick={() => generateAllPDFs(participantProfiles)}
+            size="lg"
+            className="gap-2"
+          >
+            <FileDown className="h-5 w-5" />
+            הורד את כל המשתתפים ב-PDF אחד
+          </Button>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="lg" className="gap-2">
+                <Trash2 className="h-5 w-5" />
+                אפס את כל התוצאות
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent dir="rtl">
+              <AlertDialogHeader>
+                <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  פעולה זו תמחק את כל הנתונים במערכת כולל:
+                  <br />- מיפוי שאלות ליסודות
+                  <br />- ספריית אישיויות
+                  <br />- נתוני משתתפים
+                  <br />- כל התוצאות
+                  <br />
+                  <br />
+                  לא ניתן לבטל פעולה זו!
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>ביטול</AlertDialogCancel>
+                <AlertDialogAction onClick={handleResetAll}>
+                  כן, מחק הכל
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
