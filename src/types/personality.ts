@@ -9,7 +9,7 @@ export interface ElementMapping {
 
 export interface PersonalityType {
   id: string;
-  name: string;
+  number: number;
   description: string;
   percentages: {
     fire: number;

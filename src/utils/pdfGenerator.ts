@@ -94,7 +94,7 @@ export const generatePDF = (profile: ParticipantProfile) => {
 
       ${profile.matchedPersonality ? `
         <div class="personality-section">
-          <div class="personality-title">${profile.matchedPersonality.name}</div>
+          <div class="personality-title">אישיות מספר ${profile.matchedPersonality.number}</div>
           <div class="personality-description">${profile.matchedPersonality.description}</div>
         </div>
       ` : ''}

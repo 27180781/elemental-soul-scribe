@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Element } from "@/types/personality";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
+import { downloadElementMappingTemplate, parseElementMappingExcel } from "@/utils/excelHelpers";
 
 const ELEMENT_OPTIONS: { value: Element; label: string }[] = [
   { value: 'fire', label: 'אש 🔥' },
@@ -62,6 +63,21 @@ const ElementMappingManager = () => {
     );
   };
 
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const mappings = await parseElementMappingExcel(file);
+      setElementMappings(mappings);
+      toast.success(`${mappings.length} מיפויים נטענו מהאקסל`);
+    } catch (error) {
+      console.error('Error parsing Excel:', error);
+      toast.error("שגיאה בקריאת קובץ האקסל");
+    }
+    e.target.value = '';
+  };
+
   return (
     <div className="space-y-6" dir="rtl">
       <div>
@@ -69,8 +85,34 @@ const ElementMappingManager = () => {
         <p className="text-muted-foreground">הגדר לכל שאלה איזה יסוד מייצגת כל תשובה</p>
       </div>
 
+      <div className="flex gap-3">
+        <Button
+          onClick={downloadElementMappingTemplate}
+          variant="outline"
+          className="gap-2"
+        >
+          <Download className="h-4 w-4" />
+          הורד דוגמת קובץ Excel
+        </Button>
+        
+        <Button asChild variant="secondary" className="gap-2">
+          <label htmlFor="excel-upload" className="cursor-pointer">
+            <Upload className="h-4 w-4" />
+            העלה קובץ Excel
+          </label>
+        </Button>
+        <Input
+          id="excel-upload"
+          type="file"
+          accept=".xlsx,.xls"
+          onChange={handleExcelUpload}
+          className="hidden"
+        />
+      </div>
+
       <Card className="bg-muted/50">
         <CardContent className="p-6 space-y-4">
+          <h3 className="font-semibold">הוספה ידנית</h3>
           <div className="space-y-2">
             <Label>מספר שאלה</Label>
             <Input
@@ -114,7 +156,7 @@ const ElementMappingManager = () => {
       </Card>
 
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">מיפויים קיימים</h3>
+        <h3 className="text-lg font-semibold">מיפויים קיימים ({elementMappings.length})</h3>
         {elementMappings.length === 0 ? (
           <p className="text-muted-foreground text-center py-8">אין מיפויים עדיין</p>
         ) : (
