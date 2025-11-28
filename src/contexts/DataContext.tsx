@@ -10,7 +10,9 @@ interface DataContextType {
   setParticipantData: (data: ParticipantData[]) => void;
   participantProfiles: ParticipantProfile[];
   calculateProfiles: () => void;
-  resetAllData: () => void;
+  resetParticipantData: () => void;
+  resetElementMappings: () => void;
+  resetPersonalityTypes: () => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -102,14 +104,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setParticipantProfiles(profiles);
   };
 
-  const resetAllData = () => {
-    setElementMappings([]);
-    setPersonalityTypes([]);
+  const resetParticipantData = () => {
     setParticipantData([]);
     setParticipantProfiles([]);
-    localStorage.removeItem('elementMappings');
-    localStorage.removeItem('personalityTypes');
     localStorage.removeItem('participantData');
+  };
+
+  const resetElementMappings = () => {
+    setElementMappings([]);
+    localStorage.removeItem('elementMappings');
+  };
+
+  const resetPersonalityTypes = () => {
+    setPersonalityTypes([]);
+    localStorage.removeItem('personalityTypes');
   };
 
   useEffect(() => {
@@ -127,7 +135,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setParticipantData,
         participantProfiles,
         calculateProfiles,
-        resetAllData,
+        resetParticipantData,
+        resetElementMappings,
+        resetPersonalityTypes,
       }}
     >
       {children}

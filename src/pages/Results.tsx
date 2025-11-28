@@ -32,11 +32,11 @@ const ELEMENT_NAMES = {
 };
 
 const Results = () => {
-  const { participantProfiles, resetAllData } = useData();
+  const { participantProfiles, resetParticipantData } = useData();
 
   const handleResetAll = () => {
-    resetAllData();
-    toast.success("כל הנתונים נמחקו בהצלחה");
+    resetParticipantData();
+    toast.success("נתוני המשתתפים נמחקו בהצלחה");
   };
 
   if (!participantProfiles.length) {
@@ -81,18 +81,17 @@ const Results = () => {
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="lg" className="gap-2">
                 <Trash2 className="h-5 w-5" />
-                אפס את כל התוצאות
+                אפס נתוני משתתפים
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent dir="rtl">
               <AlertDialogHeader>
                 <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  פעולה זו תמחק את כל הנתונים במערכת כולל:
-                  <br />- מיפוי שאלות ליסודות
-                  <br />- ספריית אישיויות
-                  <br />- נתוני משתתפים
-                  <br />- כל התוצאות
+                  פעולה זו תמחק רק את נתוני המשתתפים והתוצאות שלהם.
+                  <br />
+                  <br />
+                  מיפוי השאלות וספריית האישיויות יישארו שמורים.
                   <br />
                   <br />
                   לא ניתן לבטל פעולה זו!
@@ -101,7 +100,7 @@ const Results = () => {
               <AlertDialogFooter>
                 <AlertDialogCancel>ביטול</AlertDialogCancel>
                 <AlertDialogAction onClick={handleResetAll}>
-                  כן, מחק הכל
+                  כן, מחק נתונים
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
