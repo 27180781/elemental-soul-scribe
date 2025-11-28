@@ -143,7 +143,7 @@ const createProfileHTML = (profile: ParticipantProfile): HTMLElement => {
       <img src="${pdfTemplate}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;" />
       
       <!-- Content Container with proper margins -->
-      <div style="position: absolute; top: 80px; left: 60px; right: 60px; bottom: 120px; display: flex; flex-direction: column; align-items: center;">
+      <div style="position: absolute; top: 180px; left: 60px; right: 60px; bottom: 120px; display: flex; flex-direction: column; align-items: center;">
         
         <!-- Header -->
         <div style="text-align: center; margin-bottom: 30px;">
@@ -158,46 +158,11 @@ const createProfileHTML = (profile: ParticipantProfile): HTMLElement => {
           <img src="${pieChartDataUrl}" style="width: 400px; height: auto; display: block;" />
         </div>
 
-        <!-- Element Legend -->
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; width: 100%; max-width: 500px; margin: 25px 0;">
-          <div style="display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); padding: 12px; border-radius: 12px; border: 2px solid #f97316;">
-            <span style="font-size: 28px;">🔥</span>
-            <div style="text-align: right;">
-              <div style="font-size: 16px; font-weight: bold; color: #f97316;">${ELEMENT_NAMES.fire}</div>
-              <div style="font-size: 20px; font-weight: bold; color: #ea580c;">${profile.elementScores.fire.toFixed(1)}%</div>
-            </div>
-          </div>
-          
-          <div style="display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 12px; border-radius: 12px; border: 2px solid #0ea5e9;">
-            <span style="font-size: 28px;">💧</span>
-            <div style="text-align: right;">
-              <div style="font-size: 16px; font-weight: bold; color: #0ea5e9;">${ELEMENT_NAMES.water}</div>
-              <div style="font-size: 20px; font-weight: bold; color: #0284c7;">${profile.elementScores.water.toFixed(1)}%</div>
-            </div>
-          </div>
-          
-          <div style="display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%); padding: 12px; border-radius: 12px; border: 2px solid #22d3ee;">
-            <span style="font-size: 28px;">💨</span>
-            <div style="text-align: right;">
-              <div style="font-size: 16px; font-weight: bold; color: #22d3ee;">${ELEMENT_NAMES.air}</div>
-              <div style="font-size: 20px; font-weight: bold; color: #06b6d4;">${profile.elementScores.air.toFixed(1)}%</div>
-            </div>
-          </div>
-          
-          <div style="display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #f7fee7 0%, #ecfccb 100%); padding: 12px; border-radius: 12px; border: 2px solid #84cc16;">
-            <span style="font-size: 28px;">🌍</span>
-            <div style="text-align: right;">
-              <div style="font-size: 16px; font-weight: bold; color: #84cc16;">${ELEMENT_NAMES.earth}</div>
-              <div style="font-size: 20px; font-weight: bold; color: #65a30d;">${profile.elementScores.earth.toFixed(1)}%</div>
-            </div>
-          </div>
-        </div>
-
         ${profile.matchedPersonality ? `
           <div style="background: rgba(255, 255, 255, 0.95); padding: 20px 25px; border-radius: 16px; margin-top: 20px; border: 2px solid #5b21b6; box-shadow: 0 4px 12px rgba(91, 33, 182, 0.2); width: 100%; max-width: 600px;">
             <div style="text-align: center; margin-bottom: 12px;">
               <span style="display: inline-block; background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%); color: white; padding: 8px 20px; border-radius: 20px; font-size: 22px; font-weight: bold;">
-                אישיות מספר ${profile.matchedPersonality.number}${profile.matchedPersonality.name ? ` - ${profile.matchedPersonality.name}` : ''}
+                ניתוח אישיות${profile.matchedPersonality.name ? ` - ${profile.matchedPersonality.name}` : ''}
               </span>
             </div>
             <div style="line-height: 1.7; font-size: 16px; color: #1e293b; text-align: center;">
