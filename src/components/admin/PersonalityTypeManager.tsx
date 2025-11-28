@@ -6,21 +6,22 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { PersonalityType } from "@/types/personality";
-import { Trash2, Plus, Edit2 } from "lucide-react";
+import { Trash2, Plus, Edit2, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
+import { downloadPersonalityTypesTemplate, parsePersonalityTypesExcel } from "@/utils/excelHelpers";
 
 const PersonalityTypeManager = () => {
   const { personalityTypes, setPersonalityTypes } = useData();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Omit<PersonalityType, 'id'>>({
-    name: "",
+    number: 1,
     description: "",
     percentages: { fire: 25, water: 25, air: 25, earth: 25 },
   });
 
   const resetForm = () => {
     setFormData({
-      name: "",
+      number: 1,
       description: "",
       percentages: { fire: 25, water: 25, air: 25, earth: 25 },
     });
@@ -34,8 +35,8 @@ const PersonalityTypeManager = () => {
       return;
     }
 
-    if (!formData.name.trim()) {
-      toast.error("נא למלא שם אישיות");
+    if (!formData.number || formData.number < 1) {
+      toast.error("נא למלא מספר אישיות חוקי");
       return;
     }
 
@@ -59,7 +60,7 @@ const PersonalityTypeManager = () => {
 
   const startEdit = (type: PersonalityType) => {
     setFormData({
-      name: type.name,
+      number: type.number,
       description: type.description,
       percentages: { ...type.percentages },
     });
@@ -71,6 +72,21 @@ const PersonalityTypeManager = () => {
     toast.success("אישיות הוסרה");
   };
 
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const types = await parsePersonalityTypesExcel(file);
+      setPersonalityTypes(types);
+      toast.success(`${types.length} אישיויות נטענו מהאקסל`);
+    } catch (error) {
+      console.error('Error parsing Excel:', error);
+      toast.error("שגיאה בקריאת קובץ האקסל");
+    }
+    e.target.value = '';
+  };
+
   return (
     <div className="space-y-6" dir="rtl">
       <div>
@@ -78,14 +94,42 @@ const PersonalityTypeManager = () => {
         <p className="text-muted-foreground">הגדר סוגי אישיות לפי אחוזי יסודות</p>
       </div>
 
+      <div className="flex gap-3">
+        <Button
+          onClick={downloadPersonalityTypesTemplate}
+          variant="outline"
+          className="gap-2"
+        >
+          <Download className="h-4 w-4" />
+          הורד דוגמת קובץ Excel
+        </Button>
+        
+        <Button asChild variant="secondary" className="gap-2">
+          <label htmlFor="personality-excel-upload" className="cursor-pointer">
+            <Upload className="h-4 w-4" />
+            העלה קובץ Excel
+          </label>
+        </Button>
+        <Input
+          id="personality-excel-upload"
+          type="file"
+          accept=".xlsx,.xls"
+          onChange={handleExcelUpload}
+          className="hidden"
+        />
+      </div>
+
       <Card className="bg-muted/50">
         <CardContent className="p-6 space-y-4">
+          <h3 className="font-semibold">הוספה ידנית</h3>
           <div className="space-y-2">
-            <Label>שם האישיות</Label>
+            <Label>מספר אישיות</Label>
             <Input
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="לדוגמה: לוחם האש"
+              type="number"
+              min="1"
+              value={formData.number}
+              onChange={(e) => setFormData({ ...formData, number: parseInt(e.target.value) || 1 })}
+              placeholder="לדוגמה: 1"
             />
           </div>
 
@@ -186,7 +230,7 @@ const PersonalityTypeManager = () => {
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-lg">{type.name}</h4>
+                    <h4 className="font-semibold text-lg">אישיות מספר {type.number}</h4>
                     <p className="text-sm text-muted-foreground mt-1">{type.description}</p>
                   </div>
                   <div className="flex gap-2">

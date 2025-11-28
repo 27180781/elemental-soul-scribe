@@ -102,7 +102,7 @@ const Results = () => {
                   {profile.matchedPersonality && (
                     <div className="space-y-2 text-right">
                       <h3 className="font-bold text-lg">
-                        {profile.matchedPersonality.name}
+                        אישיות מספר {profile.matchedPersonality.number}
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         {profile.matchedPersonality.description}
