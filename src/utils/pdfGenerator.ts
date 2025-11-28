@@ -197,7 +197,7 @@ const createProfileHTML = (profile: ParticipantProfile): HTMLElement => {
           <div style="background: rgba(255, 255, 255, 0.95); padding: 20px 25px; border-radius: 16px; margin-top: 20px; border: 2px solid #5b21b6; box-shadow: 0 4px 12px rgba(91, 33, 182, 0.2); width: 100%; max-width: 600px;">
             <div style="text-align: center; margin-bottom: 12px;">
               <span style="display: inline-block; background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%); color: white; padding: 8px 20px; border-radius: 20px; font-size: 22px; font-weight: bold;">
-                אישיות מספר ${profile.matchedPersonality.number}
+                אישיות מספר ${profile.matchedPersonality.number}${profile.matchedPersonality.name ? ` - ${profile.matchedPersonality.name}` : ''}
               </span>
             </div>
             <div style="line-height: 1.7; font-size: 16px; color: #1e293b; text-align: center;">
