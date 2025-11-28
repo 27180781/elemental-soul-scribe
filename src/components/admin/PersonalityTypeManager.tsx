@@ -5,13 +5,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { PersonalityType } from "@/types/personality";
 import { Trash2, Plus, Edit2, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
 import { downloadPersonalityTypesTemplate, parsePersonalityTypesExcel } from "@/utils/excelHelpers";
 
 const PersonalityTypeManager = () => {
-  const { personalityTypes, setPersonalityTypes } = useData();
+  const { personalityTypes, setPersonalityTypes, resetPersonalityTypes } = useData();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Omit<PersonalityType, 'id'>>({
     number: 1,
@@ -90,6 +101,11 @@ const PersonalityTypeManager = () => {
     e.target.value = '';
   };
 
+  const handleResetTypes = () => {
+    resetPersonalityTypes();
+    toast.success("כל האישיויות נמחקו");
+  };
+
   return (
     <div className="space-y-6" dir="rtl">
       <div>
@@ -97,7 +113,7 @@ const PersonalityTypeManager = () => {
         <p className="text-muted-foreground">הגדר סוגי אישיות לפי אחוזי יסודות</p>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex gap-3 flex-wrap">
         <Button
           onClick={downloadPersonalityTypesTemplate}
           variant="outline"
@@ -120,6 +136,33 @@ const PersonalityTypeManager = () => {
           onChange={handleExcelUpload}
           className="hidden"
         />
+
+        {personalityTypes.length > 0 && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" className="gap-2">
+                <Trash2 className="h-4 w-4" />
+                אפס ספרייה
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent dir="rtl">
+              <AlertDialogHeader>
+                <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  פעולה זו תמחק את כל ספריית האישיויות.
+                  <br />
+                  לא ניתן לבטל פעולה זו!
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>ביטול</AlertDialogCancel>
+                <AlertDialogAction onClick={handleResetTypes}>
+                  כן, מחק הכל
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       <Card className="bg-muted/50">
