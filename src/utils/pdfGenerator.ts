@@ -1,4 +1,4 @@
-import { ParticipantProfile } from "@/types/personality";
+import { ParticipantProfile, PDFSettings } from "@/types/personality";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import pdfTemplate from "@/assets/pdf-template.png";
@@ -17,7 +17,7 @@ const ELEMENT_COLORS = {
   earth: { primary: '#92400e', secondary: '#b45309', shadow: '#78350f' },
 };
 
-const create3DPieChart = (elementScores: any, width: number, height: number): string => {
+const create3DPieChart = (elementScores: any, width: number, height: number, percentageFontSize: number): string => {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -109,7 +109,7 @@ const create3DPieChart = (elementScores: any, width: number, height: number): st
       const labelY = centerY + Math.sin(labelAngle) * labelRadius;
       
       ctx.fillStyle = 'white';
-      ctx.font = 'bold 24px Arial';
+      ctx.font = `bold ${percentageFontSize}px Arial`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.strokeStyle = element.colors.shadow;
@@ -124,7 +124,7 @@ const create3DPieChart = (elementScores: any, width: number, height: number): st
   return canvas.toDataURL('image/png');
 };
 
-const createProfileHTML = (profile: ParticipantProfile): HTMLElement => {
+const createProfileHTML = (profile: ParticipantProfile, settings: PDFSettings): HTMLElement => {
   const container = document.createElement('div');
   container.style.width = '210mm';
   container.style.height = '297mm';
@@ -135,7 +135,12 @@ const createProfileHTML = (profile: ParticipantProfile): HTMLElement => {
   container.style.boxSizing = 'border-box';
   container.style.overflow = 'hidden';
 
-  const pieChartDataUrl = create3DPieChart(profile.elementScores, 600, 400);
+  const pieChartDataUrl = create3DPieChart(
+    profile.elementScores, 
+    settings.chartCanvasWidth, 
+    settings.chartCanvasHeight,
+    settings.chartPercentageFontSize
+  );
 
   container.innerHTML = `
     <div style="position: relative; width: 100%; height: 100%;">
@@ -143,49 +148,49 @@ const createProfileHTML = (profile: ParticipantProfile): HTMLElement => {
       <img src="${pdfTemplate}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;" />
       
       <!-- Content Container with proper margins -->
-      <div style="position: absolute; top: 180px; left: 60px; right: 60px; bottom: 120px; display: flex; flex-direction: column; align-items: center;">
+      <div style="position: absolute; top: ${settings.contentTop}px; left: ${settings.contentLeft}px; right: ${settings.contentRight}px; bottom: ${settings.contentBottom}px; display: flex; flex-direction: column; align-items: center;">
         
         <!-- Header -->
-        <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #1e293b; font-size: 36px; margin: 0 0 10px 0; font-weight: bold;">
+        <div style="text-align: center; margin-bottom: ${settings.headerMarginBottom}px;">
+          <h1 style="color: #1e293b; font-size: ${settings.titleFontSize}px; margin: 0 0 10px 0; font-weight: bold;">
             משתתף מספר ${profile.id}
           </h1>
-          ${profile.name ? `<h2 style="color: #475569; font-size: 24px; margin: 0;">${profile.name}</h2>` : ''}
+          ${profile.name ? `<h2 style="color: #475569; font-size: ${settings.nameFontSize}px; margin: 0;">${profile.name}</h2>` : ''}
         </div>
 
         <!-- 3D Pie Chart -->
-        <div style="margin: 20px 0;">
-          <img src="${pieChartDataUrl}" style="width: 400px; height: auto; display: block;" />
+        <div style="margin: ${settings.chartMarginTop}px 0 ${settings.chartMarginBottom}px 0;">
+          <img src="${pieChartDataUrl}" style="width: ${settings.chartWidth}px; height: ${settings.chartHeight}px; display: block;" />
         </div>
 
         <!-- Legend -->
-        <div style="display: flex; justify-content: center; gap: 20px; margin: 15px 0; flex-wrap: wrap;">
+        <div style="display: flex; justify-content: center; gap: ${settings.legendGap}px; margin: ${settings.legendMarginTop}px 0; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="width: 20px; height: 20px; background: ${ELEMENT_COLORS.fire.primary}; border-radius: 4px;"></div>
-            <span style="font-size: 16px; font-weight: bold; color: #1e293b;">🔥 ${ELEMENT_NAMES.fire}</span>
+            <div style="width: ${settings.legendBoxSize}px; height: ${settings.legendBoxSize}px; background: ${ELEMENT_COLORS.fire.primary}; border-radius: 4px;"></div>
+            <span style="font-size: ${settings.legendFontSize}px; font-weight: bold; color: #1e293b;">🔥 ${ELEMENT_NAMES.fire}</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="width: 20px; height: 20px; background: ${ELEMENT_COLORS.water.primary}; border-radius: 4px;"></div>
-            <span style="font-size: 16px; font-weight: bold; color: #1e293b;">💧 ${ELEMENT_NAMES.water}</span>
+            <div style="width: ${settings.legendBoxSize}px; height: ${settings.legendBoxSize}px; background: ${ELEMENT_COLORS.water.primary}; border-radius: 4px;"></div>
+            <span style="font-size: ${settings.legendFontSize}px; font-weight: bold; color: #1e293b;">💧 ${ELEMENT_NAMES.water}</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="width: 20px; height: 20px; background: ${ELEMENT_COLORS.air.primary}; border-radius: 4px;"></div>
-            <span style="font-size: 16px; font-weight: bold; color: #1e293b;">💨 ${ELEMENT_NAMES.air}</span>
+            <div style="width: ${settings.legendBoxSize}px; height: ${settings.legendBoxSize}px; background: ${ELEMENT_COLORS.air.primary}; border-radius: 4px;"></div>
+            <span style="font-size: ${settings.legendFontSize}px; font-weight: bold; color: #1e293b;">💨 ${ELEMENT_NAMES.air}</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="width: 20px; height: 20px; background: ${ELEMENT_COLORS.earth.primary}; border-radius: 4px;"></div>
-            <span style="font-size: 16px; font-weight: bold; color: #1e293b;">🌍 ${ELEMENT_NAMES.earth}</span>
+            <div style="width: ${settings.legendBoxSize}px; height: ${settings.legendBoxSize}px; background: ${ELEMENT_COLORS.earth.primary}; border-radius: 4px;"></div>
+            <span style="font-size: ${settings.legendFontSize}px; font-weight: bold; color: #1e293b;">🌍 ${ELEMENT_NAMES.earth}</span>
           </div>
         </div>
 
         ${profile.matchedPersonality ? `
-          <div style="background: rgba(255, 255, 255, 0.95); padding: 20px 25px; border-radius: 16px; margin-top: 20px; border: 2px solid #5b21b6; box-shadow: 0 4px 12px rgba(91, 33, 182, 0.2); width: 100%; max-width: 600px;">
+          <div style="background: rgba(255, 255, 255, 0.95); padding: ${settings.personalityPadding}px; border-radius: ${settings.personalityBorderRadius}px; margin-top: ${settings.personalityMarginTop}px; border: 2px solid #5b21b6; box-shadow: 0 4px 12px rgba(91, 33, 182, 0.2); width: 100%; max-width: ${settings.personalityMaxWidth}px;">
             <div style="text-align: center; margin-bottom: 12px;">
-              <span style="display: inline-block; background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%); color: white; padding: 8px 20px; border-radius: 20px; font-size: 22px; font-weight: bold;">
+              <span style="display: inline-block; background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%); color: white; padding: 8px 20px; border-radius: 20px; font-size: ${settings.personalityTitleFontSize}px; font-weight: bold;">
                 ניתוח אישיות${profile.matchedPersonality.name ? ` - ${profile.matchedPersonality.name}` : ''}
               </span>
             </div>
-            <div style="line-height: 1.7; font-size: 16px; color: #1e293b; text-align: center;">
+            <div style="line-height: ${settings.personalityLineHeight}; font-size: ${settings.personalityTextFontSize}px; color: #1e293b; text-align: center;">
               ${profile.matchedPersonality.description}
             </div>
           </div>
@@ -197,11 +202,11 @@ const createProfileHTML = (profile: ParticipantProfile): HTMLElement => {
   return container;
 };
 
-export const generatePDF = async (profile: ParticipantProfile) => {
+export const generatePDF = async (profile: ParticipantProfile, settings: PDFSettings) => {
   try {
     toast.loading("מייצר PDF...");
     
-    const element = createProfileHTML(profile);
+    const element = createProfileHTML(profile, settings);
     document.body.appendChild(element);
 
     const html2canvas = (await import('html2canvas')).default;
@@ -237,7 +242,7 @@ export const generatePDF = async (profile: ParticipantProfile) => {
   }
 };
 
-export const generateAllPDFs = async (profiles: ParticipantProfile[]) => {
+export const generateAllPDFs = async (profiles: ParticipantProfile[], settings: PDFSettings) => {
   if (!profiles.length) {
     toast.error("אין משתתפים להורדה");
     return;
@@ -256,7 +261,7 @@ export const generateAllPDFs = async (profiles: ParticipantProfile[]) => {
 
     for (let i = 0; i < profiles.length; i++) {
       const profile = profiles[i];
-      const element = createProfileHTML(profile);
+      const element = createProfileHTML(profile, settings);
       document.body.appendChild(element);
 
       const canvas = await html2canvas(element, {

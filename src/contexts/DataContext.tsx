@@ -1,5 +1,33 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { ElementMapping, PersonalityType, ParticipantData, ParticipantProfile } from '@/types/personality';
+import { ElementMapping, PersonalityType, ParticipantData, ParticipantProfile, PDFSettings } from '@/types/personality';
+
+const DEFAULT_PDF_SETTINGS: PDFSettings = {
+  contentTop: 180,
+  contentLeft: 60,
+  contentRight: 60,
+  contentBottom: 120,
+  headerMarginBottom: 30,
+  titleFontSize: 36,
+  nameFontSize: 24,
+  chartWidth: 400,
+  chartHeight: 300,
+  chartMarginTop: 20,
+  chartMarginBottom: 20,
+  chartCanvasWidth: 600,
+  chartCanvasHeight: 400,
+  chartPercentageFontSize: 24,
+  legendMarginTop: 15,
+  legendGap: 20,
+  legendFontSize: 16,
+  legendBoxSize: 20,
+  personalityMarginTop: 20,
+  personalityPadding: 20,
+  personalityBorderRadius: 16,
+  personalityMaxWidth: 600,
+  personalityTitleFontSize: 22,
+  personalityTextFontSize: 16,
+  personalityLineHeight: 1.7,
+};
 
 interface DataContextType {
   elementMappings: ElementMapping[];
@@ -13,6 +41,9 @@ interface DataContextType {
   resetParticipantData: () => void;
   resetElementMappings: () => void;
   resetPersonalityTypes: () => void;
+  pdfSettings: PDFSettings;
+  setPdfSettings: (settings: PDFSettings) => void;
+  resetPDFSettings: () => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -22,16 +53,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [personalityTypes, setPersonalityTypes] = useState<PersonalityType[]>([]);
   const [participantData, setParticipantData] = useState<ParticipantData[]>([]);
   const [participantProfiles, setParticipantProfiles] = useState<ParticipantProfile[]>([]);
+  const [pdfSettings, setPdfSettings] = useState<PDFSettings>(DEFAULT_PDF_SETTINGS);
 
   // Load from localStorage on mount
   useEffect(() => {
     const savedMappings = localStorage.getItem('elementMappings');
     const savedTypes = localStorage.getItem('personalityTypes');
     const savedData = localStorage.getItem('participantData');
+    const savedPdfSettings = localStorage.getItem('pdfSettings');
 
     if (savedMappings) setElementMappings(JSON.parse(savedMappings));
     if (savedTypes) setPersonalityTypes(JSON.parse(savedTypes));
     if (savedData) setParticipantData(JSON.parse(savedData));
+    if (savedPdfSettings) setPdfSettings(JSON.parse(savedPdfSettings));
   }, []);
 
   // Save to localStorage when data changes
@@ -46,6 +80,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     localStorage.setItem('participantData', JSON.stringify(participantData));
   }, [participantData]);
+
+  useEffect(() => {
+    localStorage.setItem('pdfSettings', JSON.stringify(pdfSettings));
+  }, [pdfSettings]);
 
   const calculateProfiles = () => {
     if (!participantData.length || !elementMappings.length || !personalityTypes.length) {
@@ -120,6 +158,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('personalityTypes');
   };
 
+  const resetPDFSettings = () => {
+    setPdfSettings(DEFAULT_PDF_SETTINGS);
+    localStorage.setItem('pdfSettings', JSON.stringify(DEFAULT_PDF_SETTINGS));
+  };
+
   useEffect(() => {
     calculateProfiles();
   }, [participantData, elementMappings, personalityTypes]);
@@ -138,6 +181,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         resetParticipantData,
         resetElementMappings,
         resetPersonalityTypes,
+        pdfSettings,
+        setPdfSettings,
+        resetPDFSettings,
       }}
     >
       {children}
