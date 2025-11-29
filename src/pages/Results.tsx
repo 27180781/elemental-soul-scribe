@@ -33,7 +33,7 @@ const ELEMENT_NAMES = {
 };
 
 const Results = () => {
-  const { participantProfiles, resetParticipantData } = useData();
+  const { participantProfiles, resetParticipantData, pdfSettings } = useData();
   const navigate = useNavigate();
 
   const handleResetAll = () => {
@@ -82,7 +82,7 @@ const Results = () => {
 
         <div className="flex gap-3 justify-center flex-wrap">
           <Button
-            onClick={() => generateAllPDFs(participantProfiles)}
+            onClick={() => generateAllPDFs(participantProfiles, pdfSettings)}
             size="lg"
             className="gap-2"
           >
@@ -182,7 +182,7 @@ const Results = () => {
                   )}
 
                   <Button
-                    onClick={() => generatePDF(profile)}
+                    onClick={() => generatePDF(profile, pdfSettings)}
                     className="w-full gap-2"
                     variant="default"
                   >

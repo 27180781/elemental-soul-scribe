@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import ElementMappingManager from "@/components/admin/ElementMappingManager";
 import DataUploader from "@/components/admin/DataUploader";
 import PersonalityTypeManager from "@/components/admin/PersonalityTypeManager";
-import { Flame, Users, Library, Home } from "lucide-react";
+import PDFSettingsManager from "@/components/admin/PDFSettingsManager";
+import { Flame, Users, Library, Home, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const Admin = () => {
@@ -32,7 +33,7 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="mappings" className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="mappings" className="gap-2">
               <Flame className="h-4 w-4" />
               מיפוי שאלות ליסודות
@@ -44,6 +45,10 @@ const Admin = () => {
             <TabsTrigger value="personalities" className="gap-2">
               <Library className="h-4 w-4" />
               ספריית אישיויות
+            </TabsTrigger>
+            <TabsTrigger value="pdf" className="gap-2">
+              <FileText className="h-4 w-4" />
+              עיצוב PDF
             </TabsTrigger>
           </TabsList>
 
@@ -62,6 +67,12 @@ const Admin = () => {
           <TabsContent value="personalities" className="mt-6">
             <Card className="p-6">
               <PersonalityTypeManager />
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="pdf" className="mt-6">
+            <Card className="p-6">
+              <PDFSettingsManager />
             </Card>
           </TabsContent>
         </Tabs>

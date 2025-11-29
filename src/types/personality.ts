@@ -40,3 +40,40 @@ export interface ParticipantProfile {
   matchedPersonality: PersonalityType | null;
   matchScore: number;
 }
+
+export interface PDFSettings {
+  // Content container positioning
+  contentTop: number;
+  contentLeft: number;
+  contentRight: number;
+  contentBottom: number;
+  
+  // Header settings
+  headerMarginBottom: number;
+  titleFontSize: number;
+  nameFontSize: number;
+  
+  // Pie chart settings
+  chartWidth: number;
+  chartHeight: number;
+  chartMarginTop: number;
+  chartMarginBottom: number;
+  chartCanvasWidth: number;
+  chartCanvasHeight: number;
+  chartPercentageFontSize: number;
+  
+  // Legend settings
+  legendMarginTop: number;
+  legendGap: number;
+  legendFontSize: number;
+  legendBoxSize: number;
+  
+  // Personality box settings
+  personalityMarginTop: number;
+  personalityPadding: number;
+  personalityBorderRadius: number;
+  personalityMaxWidth: number;
+  personalityTitleFontSize: number;
+  personalityTextFontSize: number;
+  personalityLineHeight: number;
+}
