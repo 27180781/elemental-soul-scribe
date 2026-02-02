@@ -1,5 +1,7 @@
 export type Element = 'fire' | 'water' | 'air' | 'earth';
 
+export type DistributionMode = 'normal' | 'wide';
+
 export interface ElementMapping {
   questionId: number;
   answers: {
