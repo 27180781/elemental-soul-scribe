@@ -72,8 +72,8 @@ const create3DPieChart = (elementScores: any, width: number, height: number, per
   ctx.fillRect(0, 0, width, height);
   
   const centerX = width / 2;
-  const centerY = height / 2 - 20;
-  const radius = Math.min(width, height) / 3;
+  const centerY = height / 2 - 10;
+  const radius = Math.min(width, height) / 3.5; // Slightly smaller to make room for external labels
   const depth = 30;
   
   const elements = [
@@ -114,6 +114,13 @@ const create3DPieChart = (elementScores: any, width: number, height: number, per
     });
   }
   
+  // Collect label positions for external labels
+  const labelPositions: Array<{
+    element: typeof elements[0];
+    midAngle: number;
+    sliceAngle: number;
+  }> = [];
+  
   // Draw top surface with patterns
   let topAngle = startAngle;
   elements.forEach((element) => {
@@ -132,29 +139,70 @@ const create3DPieChart = (elementScores: any, width: number, height: number, per
       ctx.lineWidth = 2;
       ctx.stroke();
       
-      // Add percentage label
-      const labelAngle = topAngle + sliceAngle / 2;
-      const labelRadius = radius * 0.65;
-      const labelX = centerX + Math.cos(labelAngle) * labelRadius;
-      const labelY = centerY + Math.sin(labelAngle) * labelRadius;
-      
-      // White background for text
-      ctx.fillStyle = 'white';
-      ctx.beginPath();
-      ctx.arc(labelX, labelY, percentageFontSize * 0.9, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = '#000000';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      
-      ctx.fillStyle = '#000000';
-      ctx.font = `bold ${percentageFontSize}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(`${element.value.toFixed(0)}%`, labelX, labelY);
+      // Store label info for external positioning
+      labelPositions.push({
+        element,
+        midAngle: topAngle + sliceAngle / 2,
+        sliceAngle
+      });
     }
     
     topAngle += sliceAngle;
+  });
+  
+  // Draw external labels with leader lines
+  const outerLabelRadius = radius + 40; // Distance from center to label
+  const lineStartRadius = radius + 8; // Where the line starts (just outside pie)
+  const lineBendRadius = radius + 25; // Where the line bends
+  
+  labelPositions.forEach(({ element, midAngle }) => {
+    // Calculate positions
+    const lineStartX = centerX + Math.cos(midAngle) * lineStartRadius;
+    const lineStartY = centerY + Math.sin(midAngle) * lineStartRadius;
+    
+    const lineBendX = centerX + Math.cos(midAngle) * lineBendRadius;
+    const lineBendY = centerY + Math.sin(midAngle) * lineBendRadius;
+    
+    const labelX = centerX + Math.cos(midAngle) * outerLabelRadius;
+    const labelY = centerY + Math.sin(midAngle) * outerLabelRadius;
+    
+    // Determine if label is on left or right side
+    const isRightSide = Math.cos(midAngle) > 0;
+    const horizontalOffset = isRightSide ? 20 : -20;
+    const finalLabelX = labelX + horizontalOffset;
+    
+    // Draw leader line (two segments: angled then horizontal)
+    ctx.beginPath();
+    ctx.moveTo(lineStartX, lineStartY);
+    ctx.lineTo(lineBendX, lineBendY);
+    ctx.lineTo(finalLabelX, lineBendY);
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    
+    // Draw label background
+    const labelText = `${element.value.toFixed(0)}%`;
+    ctx.font = `bold ${percentageFontSize}px Arial`;
+    const textWidth = ctx.measureText(labelText).width;
+    const padding = 6;
+    
+    const bgX = isRightSide ? finalLabelX : finalLabelX - textWidth - padding * 2;
+    const bgY = lineBendY - percentageFontSize / 2 - padding;
+    const bgWidth = textWidth + padding * 2;
+    const bgHeight = percentageFontSize + padding * 2;
+    
+    // White background with border
+    ctx.fillStyle = 'white';
+    ctx.fillRect(bgX, bgY, bgWidth, bgHeight);
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(bgX, bgY, bgWidth, bgHeight);
+    
+    // Draw text
+    ctx.fillStyle = '#000000';
+    ctx.textAlign = isRightSide ? 'left' : 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(labelText, isRightSide ? finalLabelX + padding : finalLabelX - padding, lineBendY);
   });
   
   return canvas.toDataURL('image/png');
