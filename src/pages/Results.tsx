@@ -81,11 +81,36 @@ const Results = () => {
     current: 0,
     total: 0,
     stage: '',
-    isGenerating: false
+    isGenerating: false,
+    startTime: 0
   });
 
+  // Calculate estimated time remaining
+  const getEstimatedTime = () => {
+    if (pdfProgress.current === 0 || !pdfProgress.startTime) return null;
+    
+    const elapsed = Date.now() - pdfProgress.startTime;
+    const avgTimePerItem = elapsed / pdfProgress.current;
+    const remaining = pdfProgress.total - pdfProgress.current;
+    const estimatedMs = avgTimePerItem * remaining;
+    
+    if (estimatedMs < 60000) {
+      return `כ-${Math.ceil(estimatedMs / 1000)} שניות`;
+    } else {
+      const minutes = Math.floor(estimatedMs / 60000);
+      const seconds = Math.ceil((estimatedMs % 60000) / 1000);
+      return `כ-${minutes}:${seconds.toString().padStart(2, '0')} דקות`;
+    }
+  };
+
   const handleDownloadAll = async () => {
-    setPdfProgress({ current: 0, total: participantProfiles.length, stage: 'מתחיל...', isGenerating: true });
+    setPdfProgress({ 
+      current: 0, 
+      total: participantProfiles.length, 
+      stage: 'מתחיל...', 
+      isGenerating: true,
+      startTime: Date.now()
+    });
     
     await generateAllPDFs(
       participantProfiles,
@@ -93,7 +118,7 @@ const Results = () => {
       appSettings.batchPdfSize,
       appSettings.parallelPdfWorkers,
       (current, total, stage) => {
-        setPdfProgress({ current, total, stage, isGenerating: true });
+        setPdfProgress(prev => ({ ...prev, current, total, stage }));
       }
     );
     
@@ -228,14 +253,21 @@ const Results = () => {
                 </span>
               </div>
               <Progress value={(pdfProgress.current / pdfProgress.total) * 100} className="h-3" />
-              <p className="text-sm text-muted-foreground text-center">
-                {Math.round((pdfProgress.current / pdfProgress.total) * 100)}% הושלם
-                {pdfProgress.current > 0 && (
-                  <span className="mr-2">
-                    • נותרו עוד {pdfProgress.total - pdfProgress.current} משתתפים
-                  </span>
+              <div className="flex flex-col items-center gap-1">
+                <p className="text-sm text-muted-foreground">
+                  {Math.round((pdfProgress.current / pdfProgress.total) * 100)}% הושלם
+                  {pdfProgress.current > 0 && (
+                    <span className="mr-2">
+                      • נותרו עוד {pdfProgress.total - pdfProgress.current} משתתפים
+                    </span>
+                  )}
+                </p>
+                {pdfProgress.current > 0 && getEstimatedTime() && (
+                  <p className="text-xs text-primary font-medium">
+                    זמן משוער לסיום: {getEstimatedTime()}
+                  </p>
                 )}
-              </p>
+              </div>
             </CardContent>
           </Card>
         )}
