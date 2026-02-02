@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { ElementMapping, PersonalityType, ParticipantData, ParticipantProfile, PDFSettings, DistributionMode } from '@/types/personality';
+import { ElementMapping, PersonalityType, ParticipantData, ParticipantProfile, PDFSettings, DistributionMode, AppSettings } from '@/types/personality';
 
 const DEFAULT_PDF_SETTINGS: PDFSettings = {
   contentTop: 180,
@@ -29,6 +29,10 @@ const DEFAULT_PDF_SETTINGS: PDFSettings = {
   personalityLineHeight: 1.7,
 };
 
+const DEFAULT_APP_SETTINGS: AppSettings = {
+  concentrationThreshold: 10,
+};
+
 interface DataContextType {
   elementMappings: ElementMapping[];
   setElementMappings: (mappings: ElementMapping[]) => void;
@@ -46,6 +50,8 @@ interface DataContextType {
   resetPDFSettings: () => void;
   distributionMode: DistributionMode;
   setDistributionMode: (mode: DistributionMode) => void;
+  appSettings: AppSettings;
+  setAppSettings: (settings: AppSettings) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -57,6 +63,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [participantProfiles, setParticipantProfiles] = useState<ParticipantProfile[]>([]);
   const [pdfSettings, setPdfSettings] = useState<PDFSettings>(DEFAULT_PDF_SETTINGS);
   const [distributionMode, setDistributionMode] = useState<DistributionMode>('normal');
+  const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -64,11 +71,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const savedTypes = localStorage.getItem('personalityTypes');
     const savedData = localStorage.getItem('participantData');
     const savedPdfSettings = localStorage.getItem('pdfSettings');
+    const savedAppSettings = localStorage.getItem('appSettings');
 
     if (savedMappings) setElementMappings(JSON.parse(savedMappings));
     if (savedTypes) setPersonalityTypes(JSON.parse(savedTypes));
     if (savedData) setParticipantData(JSON.parse(savedData));
     if (savedPdfSettings) setPdfSettings(JSON.parse(savedPdfSettings));
+    if (savedAppSettings) setAppSettings(JSON.parse(savedAppSettings));
   }, []);
 
   // Save to localStorage when data changes
@@ -87,6 +96,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     localStorage.setItem('pdfSettings', JSON.stringify(pdfSettings));
   }, [pdfSettings]);
+
+  useEffect(() => {
+    localStorage.setItem('appSettings', JSON.stringify(appSettings));
+  }, [appSettings]);
 
   const calculateProfiles = () => {
     if (!participantData.length || !elementMappings.length || !personalityTypes.length) {
@@ -257,6 +270,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         resetPDFSettings,
         distributionMode,
         setDistributionMode,
+        appSettings,
+        setAppSettings,
       }}
     >
       {children}

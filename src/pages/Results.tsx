@@ -35,7 +35,7 @@ const ELEMENT_NAMES = {
 };
 
 const Results = () => {
-  const { participantProfiles, resetParticipantData, pdfSettings, distributionMode, setDistributionMode, personalityTypes } = useData();
+  const { participantProfiles, resetParticipantData, pdfSettings, distributionMode, setDistributionMode, personalityTypes, appSettings } = useData();
   const navigate = useNavigate();
 
   // Calculate distribution statistics
@@ -70,10 +70,10 @@ const Results = () => {
       .sort((a, b) => b.count - a.count);
 
     const maxPercentage = stats.length > 0 ? stats[0].percentage : 0;
-    const hasHighConcentration = maxPercentage > 10;
+    const hasHighConcentration = maxPercentage > appSettings.concentrationThreshold;
 
     return { stats, hasHighConcentration, maxPercentage };
-  }, [participantProfiles]);
+  }, [participantProfiles, appSettings.concentrationThreshold]);
 
   const handleResetAll = () => {
     resetParticipantData();
@@ -131,7 +131,7 @@ const Results = () => {
             <AlertTriangle className="h-5 w-5" />
             <AlertTitle className="text-right font-bold">ריכוזיות גבוהה זוהתה!</AlertTitle>
             <AlertDescription className="text-right">
-              <span className="font-semibold">{distributionStats.maxPercentage.toFixed(1)}%</span> מהמשתתפים קיבלו את אותו סוג אישיות.
+              <span className="font-semibold">{distributionStats.maxPercentage.toFixed(1)}%</span> מהמשתתפים קיבלו את אותו סוג אישיות (סף ההתראה: {appSettings.concentrationThreshold}%).
               ניתן להפעיל התפלגות רחבה לפיזור יותר מגוון.
             </AlertDescription>
           </Alert>
@@ -166,7 +166,7 @@ const Results = () => {
               {distributionStats.stats.map((stat) => (
                 <div 
                   key={stat.id} 
-                  className={`flex items-center justify-between p-3 rounded-lg border ${stat.percentage > 10 ? 'border-destructive bg-destructive/5' : 'border-border'}`}
+                  className={`flex items-center justify-between p-3 rounded-lg border ${stat.percentage > appSettings.concentrationThreshold ? 'border-destructive bg-destructive/5' : 'border-border'}`}
                 >
                   <div className="text-right">
                     <span className="font-medium">#{stat.number}</span>
@@ -176,7 +176,7 @@ const Results = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground">{stat.count} משתתפים</span>
-                    <span className={`font-bold ${stat.percentage > 10 ? 'text-destructive' : ''}`}>
+                    <span className={`font-bold ${stat.percentage > appSettings.concentrationThreshold ? 'text-destructive' : ''}`}>
                       ({stat.percentage.toFixed(1)}%)
                     </span>
                   </div>

@@ -5,7 +5,8 @@ import ElementMappingManager from "@/components/admin/ElementMappingManager";
 import DataUploader from "@/components/admin/DataUploader";
 import PersonalityTypeManager from "@/components/admin/PersonalityTypeManager";
 import PDFSettingsManager from "@/components/admin/PDFSettingsManager";
-import { Flame, Users, Library, Home, FileText } from "lucide-react";
+import AppSettingsManager from "@/components/admin/AppSettingsManager";
+import { Flame, Users, Library, Home, FileText, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const Admin = () => {
@@ -33,7 +34,7 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="mappings" className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="mappings" className="gap-2">
               <Flame className="h-4 w-4" />
               מיפוי שאלות ליסודות
@@ -49,6 +50,10 @@ const Admin = () => {
             <TabsTrigger value="pdf" className="gap-2">
               <FileText className="h-4 w-4" />
               עיצוב PDF
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="gap-2">
+              <Settings className="h-4 w-4" />
+              הגדרות
             </TabsTrigger>
           </TabsList>
 
@@ -73,6 +78,12 @@ const Admin = () => {
           <TabsContent value="pdf" className="mt-6">
             <Card className="p-6">
               <PDFSettingsManager />
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="settings" className="mt-6">
+            <Card className="p-6">
+              <AppSettingsManager />
             </Card>
           </TabsContent>
         </Tabs>

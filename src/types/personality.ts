@@ -79,3 +79,7 @@ export interface PDFSettings {
   personalityTextFontSize: number;
   personalityLineHeight: number;
 }
+
+export interface AppSettings {
+  concentrationThreshold: number; // Percentage threshold for high concentration alert (default 10)
+}
