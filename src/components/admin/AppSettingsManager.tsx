@@ -3,13 +3,14 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, Save, RotateCcw } from "lucide-react";
+import { AlertTriangle, Save, RotateCcw, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { AppSettings } from "@/types/personality";
 
 const DEFAULT_APP_SETTINGS: AppSettings = {
   concentrationThreshold: 10,
+  batchPdfSize: 10,
 };
 
 const AppSettingsManager = () => {
@@ -79,6 +80,43 @@ const AppSettingsManager = () => {
             </div>
             <p className="text-xs text-muted-foreground">
               ברירת מחדל: 10%. ערכים נמוכים יותר יציגו התראות בתדירות גבוהה יותר.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileDown className="h-5 w-5" />
+            הגדרות ייצוא PDF
+          </CardTitle>
+          <CardDescription>
+            הגדרות הקשורות להורדת קבצי PDF מרובי משתתפים
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="batchPdfSize">מספר משתתפים בכל קובץ PDF</Label>
+            <div className="flex items-center gap-4">
+              <Input
+                id="batchPdfSize"
+                type="number"
+                min={1}
+                max={100}
+                value={localSettings.batchPdfSize}
+                onChange={(e) => setLocalSettings({
+                  ...localSettings,
+                  batchPdfSize: Math.max(1, Math.min(100, parseInt(e.target.value) || 10))
+                })}
+                className="w-32"
+              />
+              <span className="text-muted-foreground text-sm">
+                בעת הורדת כל המשתתפים, המערכת תחלק ל-{localSettings.batchPdfSize} משתתפים בכל קובץ
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              ברירת מחדל: 10 משתתפים. ערכים נמוכים יותר יפיקו יותר קבצים קטנים.
             </p>
           </div>
         </CardContent>

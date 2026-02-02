@@ -191,12 +191,12 @@ const Results = () => {
 
         <div className="flex gap-3 justify-center flex-wrap">
           <Button
-            onClick={() => generateAllPDFs(participantProfiles, pdfSettings)}
+            onClick={() => generateAllPDFs(participantProfiles, pdfSettings, appSettings.batchPdfSize)}
             size="lg"
             className="gap-2"
           >
             <FileDown className="h-5 w-5" />
-            הורד את כל המשתתפים ב-PDF אחד
+            הורד את כל המשתתפים ({Math.ceil(participantProfiles.length / appSettings.batchPdfSize)} קבצים)
           </Button>
 
           <AlertDialog>
