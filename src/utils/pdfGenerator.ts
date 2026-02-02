@@ -288,53 +288,66 @@ export const generatePDF = async (profile: ParticipantProfile, settings: PDFSett
   }
 };
 
-export const generateAllPDFs = async (profiles: ParticipantProfile[], settings: PDFSettings) => {
+export const generateAllPDFs = async (profiles: ParticipantProfile[], settings: PDFSettings, batchSize: number = 10) => {
   if (!profiles.length) {
     toast.error("אין משתתפים להורדה");
     return;
   }
 
+  const totalBatches = Math.ceil(profiles.length / batchSize);
+  
   try {
-    toast.loading(`מייצר PDF עם ${profiles.length} משתתפים...`);
-
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
-    });
-
     const html2canvas = (await import('html2canvas')).default;
 
-    for (let i = 0; i < profiles.length; i++) {
-      const profile = profiles[i];
-      const element = createProfileHTML(profile, settings);
-      document.body.appendChild(element);
+    for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+      const startIndex = batchIndex * batchSize;
+      const endIndex = Math.min(startIndex + batchSize, profiles.length);
+      const batchProfiles = profiles.slice(startIndex, endIndex);
+      
+      toast.loading(`מייצר קובץ ${batchIndex + 1} מתוך ${totalBatches} (משתתפים ${startIndex + 1}-${endIndex})...`);
 
-      const canvas = await html2canvas(element, {
-        scale: 3,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: 794,
-        height: 1123,
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
       });
 
-      document.body.removeChild(element);
+      for (let i = 0; i < batchProfiles.length; i++) {
+        const profile = batchProfiles[i];
+        const element = createProfileHTML(profile, settings);
+        document.body.appendChild(element);
 
-      if (i > 0) {
-        pdf.addPage();
+        const canvas = await html2canvas(element, {
+          scale: 3,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff',
+          width: 794,
+          height: 1123,
+        });
+
+        document.body.removeChild(element);
+
+        if (i > 0) {
+          pdf.addPage();
+        }
+
+        const imgWidth = 210;
+        const imgHeight = 297;
+        
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight);
       }
 
-      const imgWidth = 210;
-      const imgHeight = 297;
+      pdf.save(`personality-profiles-${startIndex + 1}-${endIndex}.pdf`);
+      toast.dismiss();
       
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight);
+      // Small delay between batches to prevent browser freeze
+      if (batchIndex < totalBatches - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     }
-
-    pdf.save(`all-personality-profiles.pdf`);
     
-    toast.dismiss();
-    toast.success(`PDF עם ${profiles.length} משתתפים הורד בהצלחה`);
+    toast.success(`${totalBatches} קבצי PDF הורדו בהצלחה (${profiles.length} משתתפים)`);
   } catch (error) {
     console.error('Error generating all PDFs:', error);
     toast.dismiss();

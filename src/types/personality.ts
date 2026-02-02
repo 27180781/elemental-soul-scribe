@@ -82,4 +82,5 @@ export interface PDFSettings {
 
 export interface AppSettings {
   concentrationThreshold: number; // Percentage threshold for high concentration alert (default 10)
+  batchPdfSize: number; // Number of participants per PDF file when downloading all (default 10)
 }
