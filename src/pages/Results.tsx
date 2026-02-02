@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useData } from "@/contexts/DataContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,8 +13,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { Download, Sparkles, FileDown, Trash2, Home } from "lucide-react";
+import { Download, Sparkles, FileDown, Trash2, Home, AlertTriangle, Shuffle, BarChart3 } from "lucide-react";
 import { generatePDF, generateAllPDFs } from "@/utils/pdfGenerator";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -33,12 +35,55 @@ const ELEMENT_NAMES = {
 };
 
 const Results = () => {
-  const { participantProfiles, resetParticipantData, pdfSettings } = useData();
+  const { participantProfiles, resetParticipantData, pdfSettings, distributionMode, setDistributionMode, personalityTypes } = useData();
   const navigate = useNavigate();
+
+  // Calculate distribution statistics
+  const distributionStats = useMemo(() => {
+    if (!participantProfiles.length) return { stats: [], hasHighConcentration: false, maxPercentage: 0 };
+
+    const counts: Record<string, { count: number; name: string; number: number }> = {};
+    
+    participantProfiles.forEach(profile => {
+      if (profile.matchedPersonality) {
+        const id = profile.matchedPersonality.id;
+        if (!counts[id]) {
+          counts[id] = { 
+            count: 0, 
+            name: profile.matchedPersonality.name || `אישיות ${profile.matchedPersonality.number}`,
+            number: profile.matchedPersonality.number
+          };
+        }
+        counts[id].count++;
+      }
+    });
+
+    const totalParticipants = participantProfiles.length;
+    const stats = Object.entries(counts)
+      .map(([id, data]) => ({
+        id,
+        name: data.name,
+        number: data.number,
+        count: data.count,
+        percentage: (data.count / totalParticipants) * 100
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    const maxPercentage = stats.length > 0 ? stats[0].percentage : 0;
+    const hasHighConcentration = maxPercentage > 10;
+
+    return { stats, hasHighConcentration, maxPercentage };
+  }, [participantProfiles]);
 
   const handleResetAll = () => {
     resetParticipantData();
     toast.success("נתוני המשתתפים נמחקו בהצלחה");
+  };
+
+  const handleToggleDistribution = () => {
+    const newMode = distributionMode === 'normal' ? 'wide' : 'normal';
+    setDistributionMode(newMode);
+    toast.success(newMode === 'wide' ? 'עברנו להתפלגות רחבה' : 'חזרנו להתפלגות רגילה');
   };
 
   if (!participantProfiles.length) {
@@ -79,6 +124,70 @@ const Results = () => {
             </p>
           </div>
         </div>
+
+        {/* High concentration alert */}
+        {distributionStats.hasHighConcentration && distributionMode === 'normal' && (
+          <Alert variant="destructive" className="border-2">
+            <AlertTriangle className="h-5 w-5" />
+            <AlertTitle className="text-right font-bold">ריכוזיות גבוהה זוהתה!</AlertTitle>
+            <AlertDescription className="text-right">
+              <span className="font-semibold">{distributionStats.maxPercentage.toFixed(1)}%</span> מהמשתתפים קיבלו את אותו סוג אישיות.
+              ניתן להפעיל התפלגות רחבה לפיזור יותר מגוון.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Distribution stats card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                סטטיסטיקת התפלגות
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <span className={`text-sm px-3 py-1 rounded-full ${distributionMode === 'wide' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                  {distributionMode === 'wide' ? 'התפלגות רחבה' : 'התפלגות רגילה'}
+                </span>
+                <Button
+                  onClick={handleToggleDistribution}
+                  variant={distributionMode === 'wide' ? 'outline' : 'default'}
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Shuffle className="h-4 w-4" />
+                  {distributionMode === 'wide' ? 'חזור להתפלגות רגילה' : 'עבור להתפלגות רחבה'}
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {distributionStats.stats.map((stat) => (
+                <div 
+                  key={stat.id} 
+                  className={`flex items-center justify-between p-3 rounded-lg border ${stat.percentage > 10 ? 'border-destructive bg-destructive/5' : 'border-border'}`}
+                >
+                  <div className="text-right">
+                    <span className="font-medium">#{stat.number}</span>
+                    {stat.name !== `אישיות ${stat.number}` && (
+                      <span className="text-muted-foreground text-sm mr-2">{stat.name}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">{stat.count} משתתפים</span>
+                    <span className={`font-bold ${stat.percentage > 10 ? 'text-destructive' : ''}`}>
+                      ({stat.percentage.toFixed(1)}%)
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {distributionStats.stats.length === 0 && (
+              <p className="text-center text-muted-foreground py-4">אין נתונים להצגה</p>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="flex gap-3 justify-center flex-wrap">
           <Button
