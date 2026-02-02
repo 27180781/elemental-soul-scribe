@@ -11,6 +11,7 @@ import { AppSettings } from "@/types/personality";
 const DEFAULT_APP_SETTINGS: AppSettings = {
   concentrationThreshold: 10,
   batchPdfSize: 10,
+  parallelPdfWorkers: 3,
 };
 
 const AppSettingsManager = () => {
@@ -95,7 +96,7 @@ const AppSettingsManager = () => {
             הגדרות הקשורות להורדת קבצי PDF מרובי משתתפים
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="batchPdfSize">מספר משתתפים בכל קובץ PDF</Label>
             <div className="flex items-center gap-4">
@@ -118,6 +119,35 @@ const AppSettingsManager = () => {
             <p className="text-xs text-muted-foreground">
               ברירת מחדל: 10 משתתפים. ערכים נמוכים יותר יפיקו יותר קבצים קטנים.
             </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="parallelWorkers">מספר מנועי PDF מקבילים</Label>
+            <div className="flex items-center gap-4">
+              <Input
+                id="parallelWorkers"
+                type="number"
+                min={1}
+                max={5}
+                value={localSettings.parallelPdfWorkers}
+                onChange={(e) => setLocalSettings({
+                  ...localSettings,
+                  parallelPdfWorkers: Math.max(1, Math.min(5, parseInt(e.target.value) || 3))
+                })}
+                className="w-32"
+              />
+              <span className="text-muted-foreground text-sm">
+                מספר התהליכים שיעבדו במקביל ביצירת PDF
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              במחשבים חזקים ניתן להגדיר 4-5, במחשבים חלשים מומלץ 1-2. ברירת מחדל: 3.
+            </p>
+            <div className="flex gap-2 text-xs text-muted-foreground">
+              <span>1 = איטי אך יציב</span>
+              <span>•</span>
+              <span>5 = מהיר אך דורש מחשב חזק</span>
+            </div>
           </div>
         </CardContent>
       </Card>

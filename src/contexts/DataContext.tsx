@@ -32,6 +32,7 @@ const DEFAULT_PDF_SETTINGS: PDFSettings = {
 const DEFAULT_APP_SETTINGS: AppSettings = {
   concentrationThreshold: 10,
   batchPdfSize: 10,
+  parallelPdfWorkers: 3,
 };
 
 interface DataContextType {

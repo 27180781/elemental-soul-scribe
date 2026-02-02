@@ -288,13 +288,49 @@ export const generatePDF = async (profile: ParticipantProfile, settings: PDFSett
   }
 };
 
-export const generateAllPDFs = async (profiles: ParticipantProfile[], settings: PDFSettings, batchSize: number = 10) => {
+// Parallel processing helper function
+const processInParallel = async <T, R>(
+  items: T[],
+  concurrency: number,
+  processor: (item: T, index: number) => Promise<R>,
+  onProgress?: (completed: number, total: number) => void
+): Promise<R[]> => {
+  const results: R[] = new Array(items.length);
+  let completed = 0;
+  let currentIndex = 0;
+
+  const processNext = async (): Promise<void> => {
+    while (currentIndex < items.length) {
+      const index = currentIndex++;
+      results[index] = await processor(items[index], index);
+      completed++;
+      onProgress?.(completed, items.length);
+    }
+  };
+
+  // Start multiple workers in parallel
+  const workers = Array(Math.min(concurrency, items.length))
+    .fill(null)
+    .map(() => processNext());
+
+  await Promise.all(workers);
+  return results;
+};
+
+export const generateAllPDFs = async (
+  profiles: ParticipantProfile[], 
+  settings: PDFSettings, 
+  batchSize: number = 10,
+  parallelWorkers: number = 3,
+  onProgress?: (current: number, total: number, stage: string) => void
+) => {
   if (!profiles.length) {
     toast.error("אין משתתפים להורדה");
     return;
   }
 
   const totalBatches = Math.ceil(profiles.length / batchSize);
+  let overallProcessed = 0;
   
   try {
     const html2canvas = (await import('html2canvas')).default;
@@ -304,7 +340,7 @@ export const generateAllPDFs = async (profiles: ParticipantProfile[], settings: 
       const endIndex = Math.min(startIndex + batchSize, profiles.length);
       const batchProfiles = profiles.slice(startIndex, endIndex);
       
-      toast.loading(`מייצר קובץ ${batchIndex + 1} מתוך ${totalBatches} (משתתפים ${startIndex + 1}-${endIndex})...`);
+      onProgress?.(overallProcessed, profiles.length, `מכין קובץ ${batchIndex + 1} מתוך ${totalBatches}...`);
 
       const pdf = new jsPDF({
         orientation: 'portrait',
@@ -312,45 +348,57 @@ export const generateAllPDFs = async (profiles: ParticipantProfile[], settings: 
         format: 'a4',
       });
 
-      for (let i = 0; i < batchProfiles.length; i++) {
-        const profile = batchProfiles[i];
+      // Step 1: Create all HTML elements (fast)
+      const elements = batchProfiles.map(profile => {
         const element = createProfileHTML(profile, settings);
         document.body.appendChild(element);
+        return { profile, element };
+      });
 
-        const canvas = await html2canvas(element, {
-          scale: 3,
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: '#ffffff',
-          width: 794,
-          height: 1123,
-        });
+      // Step 2: Convert to images in parallel
+      const canvasResults = await processInParallel(
+        elements,
+        parallelWorkers,
+        async ({ element }, index) => {
+          const canvas = await html2canvas(element, {
+            scale: 3,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            width: 794,
+            height: 1123,
+          });
+          overallProcessed++;
+          onProgress?.(overallProcessed, profiles.length, `ממיר לתמונה ${overallProcessed} מתוך ${profiles.length}`);
+          return canvas;
+        }
+      );
 
-        document.body.removeChild(element);
+      // Clean up DOM
+      elements.forEach(({ element }) => document.body.removeChild(element));
 
-        if (i > 0) {
+      // Step 3: Assemble PDF (fast)
+      const imgWidth = 210;
+      const imgHeight = 297;
+      
+      canvasResults.forEach((canvas, index) => {
+        if (index > 0) {
           pdf.addPage();
         }
-
-        const imgWidth = 210;
-        const imgHeight = 297;
-        
         pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight);
-      }
+      });
 
       pdf.save(`personality-profiles-${startIndex + 1}-${endIndex}.pdf`);
-      toast.dismiss();
       
       // Small delay between batches to prevent browser freeze
       if (batchIndex < totalBatches - 1) {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
     }
     
     toast.success(`${totalBatches} קבצי PDF הורדו בהצלחה (${profiles.length} משתתפים)`);
   } catch (error) {
     console.error('Error generating all PDFs:', error);
-    toast.dismiss();
     toast.error("שגיאה ביצירת PDF");
   }
 };

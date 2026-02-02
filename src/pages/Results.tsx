@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useData } from "@/contexts/DataContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { Download, Sparkles, FileDown, Trash2, Home, AlertTriangle, Shuffle, BarChart3 } from "lucide-react";
+import { Download, Sparkles, FileDown, Trash2, Home, AlertTriangle, Shuffle, BarChart3, Loader2 } from "lucide-react";
 import { generatePDF, generateAllPDFs } from "@/utils/pdfGenerator";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -74,6 +75,30 @@ const Results = () => {
 
     return { stats, hasHighConcentration, maxPercentage };
   }, [participantProfiles, appSettings.concentrationThreshold]);
+
+  // PDF generation progress state
+  const [pdfProgress, setPdfProgress] = useState({
+    current: 0,
+    total: 0,
+    stage: '',
+    isGenerating: false
+  });
+
+  const handleDownloadAll = async () => {
+    setPdfProgress({ current: 0, total: participantProfiles.length, stage: 'מתחיל...', isGenerating: true });
+    
+    await generateAllPDFs(
+      participantProfiles,
+      pdfSettings,
+      appSettings.batchPdfSize,
+      appSettings.parallelPdfWorkers,
+      (current, total, stage) => {
+        setPdfProgress({ current, total, stage, isGenerating: true });
+      }
+    );
+    
+    setPdfProgress(prev => ({ ...prev, isGenerating: false }));
+  };
 
   const handleResetAll = () => {
     resetParticipantData();
@@ -189,14 +214,48 @@ const Results = () => {
           </CardContent>
         </Card>
 
+        {/* PDF Progress Indicator */}
+        {pdfProgress.isGenerating && (
+          <Card className="border-2 border-primary">
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  <span className="font-medium">{pdfProgress.stage}</span>
+                </div>
+                <span className="text-muted-foreground">
+                  {pdfProgress.current} / {pdfProgress.total}
+                </span>
+              </div>
+              <Progress value={(pdfProgress.current / pdfProgress.total) * 100} className="h-3" />
+              <p className="text-sm text-muted-foreground text-center">
+                {Math.round((pdfProgress.current / pdfProgress.total) * 100)}% הושלם
+                {pdfProgress.current > 0 && (
+                  <span className="mr-2">
+                    • נותרו עוד {pdfProgress.total - pdfProgress.current} משתתפים
+                  </span>
+                )}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="flex gap-3 justify-center flex-wrap">
           <Button
-            onClick={() => generateAllPDFs(participantProfiles, pdfSettings, appSettings.batchPdfSize)}
+            onClick={handleDownloadAll}
             size="lg"
             className="gap-2"
+            disabled={pdfProgress.isGenerating}
           >
-            <FileDown className="h-5 w-5" />
-            הורד את כל המשתתפים ({Math.ceil(participantProfiles.length / appSettings.batchPdfSize)} קבצים)
+            {pdfProgress.isGenerating ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <FileDown className="h-5 w-5" />
+            )}
+            {pdfProgress.isGenerating 
+              ? 'מייצר...' 
+              : `הורד את כל המשתתפים (${Math.ceil(participantProfiles.length / appSettings.batchPdfSize)} קבצים)`
+            }
           </Button>
 
           <AlertDialog>
