@@ -180,7 +180,7 @@ const createProfileHTML = (profile: ParticipantProfile, settings: PDFSettings): 
   container.style.position = 'relative';
   container.style.backgroundColor = 'white';
   container.style.direction = 'rtl';
-  container.style.fontFamily = 'Arial, sans-serif';
+  container.style.fontFamily = 'Kanuba, Arial, sans-serif';
   container.style.boxSizing = 'border-box';
   container.style.overflow = 'hidden';
 
@@ -198,10 +198,10 @@ const createProfileHTML = (profile: ParticipantProfile, settings: PDFSettings): 
         
         <!-- Header -->
         <div style="text-align: center; margin-bottom: ${settings.headerMarginBottom}px;">
-          <h1 style="color: #000000; font-size: ${settings.titleFontSize}px; margin: 0 0 10px 0; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">
+          <h1 style="color: #000000; font-size: ${settings.titleFontSize}px; margin: 0 0 10px 0; font-weight: 700; font-family: Kanuba, Arial, sans-serif; letter-spacing: 2px; text-transform: uppercase;">
             משתתף מספר ${profile.id}
           </h1>
-          ${profile.name ? `<h2 style="color: #333333; font-size: ${settings.nameFontSize}px; margin: 0; font-style: italic;">${profile.name}</h2>` : ''}
+          ${profile.name ? `<h2 style="color: #333333; font-size: ${settings.nameFontSize}px; margin: 0; font-weight: 400; font-family: Kanuba, Arial, sans-serif;">${profile.name}</h2>` : ''}
         </div>
 
         <!-- 3D Pie Chart -->
@@ -213,30 +213,30 @@ const createProfileHTML = (profile: ParticipantProfile, settings: PDFSettings): 
         <div style="display: flex; justify-content: center; gap: ${settings.legendGap}px; margin: ${settings.legendMarginTop}px 0; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 8px;">
             <div style="width: ${settings.legendBoxSize}px; height: ${settings.legendBoxSize}px; background: #000000; border: 2px solid #000000; border-radius: 2px;"></div>
-            <span style="font-size: ${settings.legendFontSize}px; font-weight: bold; color: #000000;">${ELEMENT_NAMES.fire}</span>
+            <span style="font-size: ${settings.legendFontSize}px; font-weight: 700; font-family: Kanuba, Arial, sans-serif; color: #000000;">${ELEMENT_NAMES.fire}</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <div style="width: ${settings.legendBoxSize}px; height: ${settings.legendBoxSize}px; background: url('${createPatternSVG('horizontal-lines', '#666666')}'); border: 2px solid #000000; border-radius: 2px;"></div>
-            <span style="font-size: ${settings.legendFontSize}px; font-weight: bold; color: #000000;">${ELEMENT_NAMES.water}</span>
+            <span style="font-size: ${settings.legendFontSize}px; font-weight: 700; font-family: Kanuba, Arial, sans-serif; color: #000000;">${ELEMENT_NAMES.water}</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <div style="width: ${settings.legendBoxSize}px; height: ${settings.legendBoxSize}px; background: url('${createPatternSVG('diagonal-lines', '#999999')}'); border: 2px solid #000000; border-radius: 2px;"></div>
-            <span style="font-size: ${settings.legendFontSize}px; font-weight: bold; color: #000000;">${ELEMENT_NAMES.air}</span>
+            <span style="font-size: ${settings.legendFontSize}px; font-weight: 700; font-family: Kanuba, Arial, sans-serif; color: #000000;">${ELEMENT_NAMES.air}</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <div style="width: ${settings.legendBoxSize}px; height: ${settings.legendBoxSize}px; background: url('${createPatternSVG('dots', '#cccccc')}'); border: 2px solid #000000; border-radius: 2px;"></div>
-            <span style="font-size: ${settings.legendFontSize}px; font-weight: bold; color: #000000;">${ELEMENT_NAMES.earth}</span>
+            <span style="font-size: ${settings.legendFontSize}px; font-weight: 700; font-family: Kanuba, Arial, sans-serif; color: #000000;">${ELEMENT_NAMES.earth}</span>
           </div>
         </div>
 
         ${profile.matchedPersonality ? `
           <div style="background: white; padding: ${settings.personalityPadding}px; border-radius: ${settings.personalityBorderRadius}px; margin-top: ${settings.personalityMarginTop}px; border: 3px solid #000000; box-shadow: 4px 4px 0px #000000; width: 100%; max-width: ${settings.personalityMaxWidth}px;">
             <div style="text-align: center; margin-bottom: 12px;">
-              <span style="display: inline-block; background: #000000; color: white; padding: 8px 20px; border-radius: 0; font-size: ${settings.personalityTitleFontSize}px; font-weight: bold; letter-spacing: 1px;">
+              <span style="display: inline-block; background: #000000; color: white; padding: 8px 20px; border-radius: 0; font-size: ${settings.personalityTitleFontSize}px; font-weight: 700; font-family: Kanuba, Arial, sans-serif; letter-spacing: 1px;">
                 ניתוח אישיות${profile.matchedPersonality.name ? ` - ${profile.matchedPersonality.name}` : ''}
               </span>
             </div>
-            <div style="line-height: ${settings.personalityLineHeight}; font-size: ${settings.personalityTextFontSize}px; color: #000000; text-align: center;">
+            <div style="line-height: ${settings.personalityLineHeight}; font-size: ${settings.personalityTextFontSize}px; color: #000000; text-align: center; font-weight: 400; font-family: Kanuba, Arial, sans-serif;">
               ${profile.matchedPersonality.description}
             </div>
           </div>
