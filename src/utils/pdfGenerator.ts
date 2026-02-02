@@ -1,7 +1,6 @@
 import { ParticipantProfile, PDFSettings } from "@/types/personality";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
-import pdfTemplate from "@/assets/pdf-template.png";
 
 const ELEMENT_NAMES = {
   fire: "אש",
@@ -10,11 +9,56 @@ const ELEMENT_NAMES = {
   earth: "עפר",
 };
 
-const ELEMENT_COLORS = {
-  fire: { primary: '#dc2626', secondary: '#ef4444', shadow: '#b91c1c' },
-  water: { primary: '#2563eb', secondary: '#3b82f6', shadow: '#1d4ed8' },
-  air: { primary: '#16a34a', secondary: '#22c55e', shadow: '#15803d' },
-  earth: { primary: '#92400e', secondary: '#b45309', shadow: '#78350f' },
+// Black and white patterns for each element
+const ELEMENT_PATTERNS = {
+  fire: { fill: '#000000', pattern: 'solid' },
+  water: { fill: '#666666', pattern: 'horizontal-lines' },
+  air: { fill: '#999999', pattern: 'diagonal-lines' },
+  earth: { fill: '#cccccc', pattern: 'dots' },
+};
+
+const createPattern = (ctx: CanvasRenderingContext2D, type: string, color: string): CanvasPattern | string => {
+  const patternCanvas = document.createElement('canvas');
+  patternCanvas.width = 10;
+  patternCanvas.height = 10;
+  const patternCtx = patternCanvas.getContext('2d')!;
+  
+  patternCtx.fillStyle = 'white';
+  patternCtx.fillRect(0, 0, 10, 10);
+  patternCtx.strokeStyle = color;
+  patternCtx.fillStyle = color;
+  patternCtx.lineWidth = 2;
+  
+  switch(type) {
+    case 'solid':
+      patternCtx.fillRect(0, 0, 10, 10);
+      break;
+    case 'horizontal-lines':
+      patternCtx.beginPath();
+      patternCtx.moveTo(0, 3);
+      patternCtx.lineTo(10, 3);
+      patternCtx.moveTo(0, 7);
+      patternCtx.lineTo(10, 7);
+      patternCtx.stroke();
+      break;
+    case 'diagonal-lines':
+      patternCtx.beginPath();
+      patternCtx.moveTo(0, 0);
+      patternCtx.lineTo(10, 10);
+      patternCtx.moveTo(-5, 5);
+      patternCtx.lineTo(5, 15);
+      patternCtx.moveTo(5, -5);
+      patternCtx.lineTo(15, 5);
+      patternCtx.stroke();
+      break;
+    case 'dots':
+      patternCtx.beginPath();
+      patternCtx.arc(5, 5, 2, 0, Math.PI * 2);
+      patternCtx.fill();
+      break;
+  }
+  
+  return ctx.createPattern(patternCanvas, 'repeat') || color;
 };
 
 const create3DPieChart = (elementScores: any, width: number, height: number, percentageFontSize: number): string => {
@@ -23,16 +67,20 @@ const create3DPieChart = (elementScores: any, width: number, height: number, per
   canvas.height = height;
   const ctx = canvas.getContext('2d')!;
   
+  // White background
+  ctx.fillStyle = 'white';
+  ctx.fillRect(0, 0, width, height);
+  
   const centerX = width / 2;
   const centerY = height / 2 - 20;
   const radius = Math.min(width, height) / 3;
   const depth = 30;
   
   const elements = [
-    { name: 'fire', value: elementScores.fire, colors: ELEMENT_COLORS.fire },
-    { name: 'water', value: elementScores.water, colors: ELEMENT_COLORS.water },
-    { name: 'air', value: elementScores.air, colors: ELEMENT_COLORS.air },
-    { name: 'earth', value: elementScores.earth, colors: ELEMENT_COLORS.earth },
+    { name: 'fire', value: elementScores.fire, pattern: ELEMENT_PATTERNS.fire },
+    { name: 'water', value: elementScores.water, pattern: ELEMENT_PATTERNS.water },
+    { name: 'air', value: elementScores.air, pattern: ELEMENT_PATTERNS.air },
+    { name: 'earth', value: elementScores.earth, pattern: ELEMENT_PATTERNS.earth },
   ];
   
   let startAngle = -Math.PI / 2;
@@ -45,27 +93,18 @@ const create3DPieChart = (elementScores: any, width: number, height: number, per
       const sliceAngle = (element.value / 100) * 2 * Math.PI;
       
       if (element.value > 0) {
-        // Draw side of slice
         ctx.beginPath();
         ctx.arc(centerX, centerY + d, radius, currentAngle, currentAngle + sliceAngle);
         ctx.lineTo(centerX, centerY + d);
         ctx.closePath();
         
-        // Gradient for 3D effect
-        const gradient = ctx.createRadialGradient(
-          centerX, centerY + d, 0,
-          centerX, centerY + d, radius
-        );
-        gradient.addColorStop(0, element.colors.secondary);
-        gradient.addColorStop(0.7, element.colors.primary);
-        gradient.addColorStop(1, element.colors.shadow);
-        
-        ctx.fillStyle = gradient;
+        // Darker shade for depth
+        const depthShade = Math.floor(parseInt(element.pattern.fill.slice(1), 16) * 0.7);
+        ctx.fillStyle = `#${depthShade.toString(16).padStart(6, '0')}`;
         ctx.fill();
         
-        // Add shadow/edge
         if (d === depth) {
-          ctx.strokeStyle = element.colors.shadow;
+          ctx.strokeStyle = '#000000';
           ctx.lineWidth = 1;
           ctx.stroke();
         }
@@ -75,7 +114,7 @@ const create3DPieChart = (elementScores: any, width: number, height: number, per
     });
   }
   
-  // Draw top surface with highlights
+  // Draw top surface with patterns
   let topAngle = startAngle;
   elements.forEach((element) => {
     const sliceAngle = (element.value / 100) * 2 * Math.PI;
@@ -86,35 +125,32 @@ const create3DPieChart = (elementScores: any, width: number, height: number, per
       ctx.lineTo(centerX, centerY);
       ctx.closePath();
       
-      // Top gradient
-      const topGradient = ctx.createRadialGradient(
-        centerX - radius/3, centerY - radius/3, 0,
-        centerX, centerY, radius
-      );
-      topGradient.addColorStop(0, element.colors.secondary);
-      topGradient.addColorStop(0.6, element.colors.primary);
-      topGradient.addColorStop(1, element.colors.shadow);
-      
-      ctx.fillStyle = topGradient;
+      ctx.fillStyle = createPattern(ctx, element.pattern.pattern, element.pattern.fill) as string | CanvasPattern;
       ctx.fill();
       
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.strokeStyle = '#000000';
       ctx.lineWidth = 2;
       ctx.stroke();
       
       // Add percentage label
       const labelAngle = topAngle + sliceAngle / 2;
-      const labelRadius = radius * 0.7;
+      const labelRadius = radius * 0.65;
       const labelX = centerX + Math.cos(labelAngle) * labelRadius;
       const labelY = centerY + Math.sin(labelAngle) * labelRadius;
       
+      // White background for text
       ctx.fillStyle = 'white';
+      ctx.beginPath();
+      ctx.arc(labelX, labelY, percentageFontSize * 0.9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      ctx.fillStyle = '#000000';
       ctx.font = `bold ${percentageFontSize}px Arial`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.strokeStyle = element.colors.shadow;
-      ctx.lineWidth = 3;
-      ctx.strokeText(`${element.value.toFixed(0)}%`, labelX, labelY);
       ctx.fillText(`${element.value.toFixed(0)}%`, labelX, labelY);
     }
     
@@ -122,6 +158,19 @@ const create3DPieChart = (elementScores: any, width: number, height: number, per
   });
   
   return canvas.toDataURL('image/png');
+};
+
+// Create pattern SVG for legend boxes
+const createPatternSVG = (type: string, fill: string): string => {
+  const patterns: Record<string, string> = {
+    'solid': `<rect width="100%" height="100%" fill="${fill}"/>`,
+    'horizontal-lines': `<rect width="100%" height="100%" fill="white"/><line x1="0" y1="3" x2="10" y2="3" stroke="${fill}" stroke-width="2"/><line x1="0" y1="7" x2="10" y2="7" stroke="${fill}" stroke-width="2"/>`,
+    'diagonal-lines': `<rect width="100%" height="100%" fill="white"/><line x1="0" y1="0" x2="10" y2="10" stroke="${fill}" stroke-width="2"/><line x1="-5" y1="5" x2="5" y2="15" stroke="${fill}" stroke-width="2"/><line x1="5" y1="-5" x2="15" y2="5" stroke="${fill}" stroke-width="2"/>`,
+    'dots': `<rect width="100%" height="100%" fill="white"/><circle cx="5" cy="5" r="2" fill="${fill}"/>`,
+  };
+  
+  const patternContent = patterns[type] || patterns['solid'];
+  return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10">${patternContent}</svg>`)}`;
 };
 
 const createProfileHTML = (profile: ParticipantProfile, settings: PDFSettings): HTMLElement => {
@@ -143,19 +192,16 @@ const createProfileHTML = (profile: ParticipantProfile, settings: PDFSettings): 
   );
 
   container.innerHTML = `
-    <div style="position: relative; width: 100%; height: 100%;">
-      <!-- Background Template -->
-      <img src="${pdfTemplate}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;" />
-      
+    <div style="position: relative; width: 100%; height: 100%; background: white;">
       <!-- Content Container with proper margins -->
       <div style="position: absolute; top: ${settings.contentTop}px; left: ${settings.contentLeft}px; right: ${settings.contentRight}px; bottom: ${settings.contentBottom}px; display: flex; flex-direction: column; align-items: center;">
         
         <!-- Header -->
         <div style="text-align: center; margin-bottom: ${settings.headerMarginBottom}px;">
-          <h1 style="color: #1e293b; font-size: ${settings.titleFontSize}px; margin: 0 0 10px 0; font-weight: bold;">
+          <h1 style="color: #000000; font-size: ${settings.titleFontSize}px; margin: 0 0 10px 0; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">
             משתתף מספר ${profile.id}
           </h1>
-          ${profile.name ? `<h2 style="color: #475569; font-size: ${settings.nameFontSize}px; margin: 0;">${profile.name}</h2>` : ''}
+          ${profile.name ? `<h2 style="color: #333333; font-size: ${settings.nameFontSize}px; margin: 0; font-style: italic;">${profile.name}</h2>` : ''}
         </div>
 
         <!-- 3D Pie Chart -->
@@ -163,34 +209,34 @@ const createProfileHTML = (profile: ParticipantProfile, settings: PDFSettings): 
           <img src="${pieChartDataUrl}" style="width: ${settings.chartWidth}px; height: ${settings.chartHeight}px; display: block;" />
         </div>
 
-        <!-- Legend -->
+        <!-- Legend with patterns -->
         <div style="display: flex; justify-content: center; gap: ${settings.legendGap}px; margin: ${settings.legendMarginTop}px 0; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="width: ${settings.legendBoxSize}px; height: ${settings.legendBoxSize}px; background: ${ELEMENT_COLORS.fire.primary}; border-radius: 4px;"></div>
-            <span style="font-size: ${settings.legendFontSize}px; font-weight: bold; color: #1e293b;">🔥 ${ELEMENT_NAMES.fire}</span>
+            <div style="width: ${settings.legendBoxSize}px; height: ${settings.legendBoxSize}px; background: #000000; border: 2px solid #000000; border-radius: 2px;"></div>
+            <span style="font-size: ${settings.legendFontSize}px; font-weight: bold; color: #000000;">${ELEMENT_NAMES.fire}</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="width: ${settings.legendBoxSize}px; height: ${settings.legendBoxSize}px; background: ${ELEMENT_COLORS.water.primary}; border-radius: 4px;"></div>
-            <span style="font-size: ${settings.legendFontSize}px; font-weight: bold; color: #1e293b;">💧 ${ELEMENT_NAMES.water}</span>
+            <div style="width: ${settings.legendBoxSize}px; height: ${settings.legendBoxSize}px; background: url('${createPatternSVG('horizontal-lines', '#666666')}'); border: 2px solid #000000; border-radius: 2px;"></div>
+            <span style="font-size: ${settings.legendFontSize}px; font-weight: bold; color: #000000;">${ELEMENT_NAMES.water}</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="width: ${settings.legendBoxSize}px; height: ${settings.legendBoxSize}px; background: ${ELEMENT_COLORS.air.primary}; border-radius: 4px;"></div>
-            <span style="font-size: ${settings.legendFontSize}px; font-weight: bold; color: #1e293b;">💨 ${ELEMENT_NAMES.air}</span>
+            <div style="width: ${settings.legendBoxSize}px; height: ${settings.legendBoxSize}px; background: url('${createPatternSVG('diagonal-lines', '#999999')}'); border: 2px solid #000000; border-radius: 2px;"></div>
+            <span style="font-size: ${settings.legendFontSize}px; font-weight: bold; color: #000000;">${ELEMENT_NAMES.air}</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="width: ${settings.legendBoxSize}px; height: ${settings.legendBoxSize}px; background: ${ELEMENT_COLORS.earth.primary}; border-radius: 4px;"></div>
-            <span style="font-size: ${settings.legendFontSize}px; font-weight: bold; color: #1e293b;">🌍 ${ELEMENT_NAMES.earth}</span>
+            <div style="width: ${settings.legendBoxSize}px; height: ${settings.legendBoxSize}px; background: url('${createPatternSVG('dots', '#cccccc')}'); border: 2px solid #000000; border-radius: 2px;"></div>
+            <span style="font-size: ${settings.legendFontSize}px; font-weight: bold; color: #000000;">${ELEMENT_NAMES.earth}</span>
           </div>
         </div>
 
         ${profile.matchedPersonality ? `
-          <div style="background: rgba(255, 255, 255, 0.95); padding: ${settings.personalityPadding}px; border-radius: ${settings.personalityBorderRadius}px; margin-top: ${settings.personalityMarginTop}px; border: 2px solid #5b21b6; box-shadow: 0 4px 12px rgba(91, 33, 182, 0.2); width: 100%; max-width: ${settings.personalityMaxWidth}px;">
+          <div style="background: white; padding: ${settings.personalityPadding}px; border-radius: ${settings.personalityBorderRadius}px; margin-top: ${settings.personalityMarginTop}px; border: 3px solid #000000; box-shadow: 4px 4px 0px #000000; width: 100%; max-width: ${settings.personalityMaxWidth}px;">
             <div style="text-align: center; margin-bottom: 12px;">
-              <span style="display: inline-block; background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%); color: white; padding: 8px 20px; border-radius: 20px; font-size: ${settings.personalityTitleFontSize}px; font-weight: bold;">
+              <span style="display: inline-block; background: #000000; color: white; padding: 8px 20px; border-radius: 0; font-size: ${settings.personalityTitleFontSize}px; font-weight: bold; letter-spacing: 1px;">
                 ניתוח אישיות${profile.matchedPersonality.name ? ` - ${profile.matchedPersonality.name}` : ''}
               </span>
             </div>
-            <div style="line-height: ${settings.personalityLineHeight}; font-size: ${settings.personalityTextFontSize}px; color: #1e293b; text-align: center;">
+            <div style="line-height: ${settings.personalityLineHeight}; font-size: ${settings.personalityTextFontSize}px; color: #000000; text-align: center;">
               ${profile.matchedPersonality.description}
             </div>
           </div>
