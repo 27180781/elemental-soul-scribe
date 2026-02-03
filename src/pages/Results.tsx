@@ -39,6 +39,25 @@ const Results = () => {
   const { participantProfiles, resetParticipantData, pdfSettings, distributionMode, setDistributionMode, personalityTypes, appSettings } = useData();
   const navigate = useNavigate();
 
+  // Detect zero-profile participants (all elements = 0)
+  const zeroProfileStats = useMemo(() => {
+    if (!participantProfiles.length) return { count: 0, percentage: 0, hasIssue: false };
+    
+    const zeroProfiles = participantProfiles.filter(profile => 
+      profile.elementScores.fire === 0 &&
+      profile.elementScores.water === 0 &&
+      profile.elementScores.air === 0 &&
+      profile.elementScores.earth === 0
+    );
+    
+    const percentage = (zeroProfiles.length / participantProfiles.length) * 100;
+    return {
+      count: zeroProfiles.length,
+      percentage,
+      hasIssue: zeroProfiles.length > 0
+    };
+  }, [participantProfiles]);
+
   // Calculate distribution statistics
   const distributionStats = useMemo(() => {
     if (!participantProfiles.length) return { stats: [], hasHighConcentration: false, maxPercentage: 0 };
@@ -175,8 +194,22 @@ const Results = () => {
           </div>
         </div>
 
+        {/* Zero profiles alert - data quality issue */}
+        {zeroProfileStats.hasIssue && (
+          <Alert variant="destructive" className="border-2">
+            <AlertTriangle className="h-5 w-5" />
+            <AlertTitle className="text-right font-bold">בעיית איכות נתונים!</AlertTitle>
+            <AlertDescription className="text-right">
+              ל-<span className="font-semibold">{zeroProfileStats.count}</span> משתתפים ({zeroProfileStats.percentage.toFixed(1)}%) 
+              לא נקלטו תשובות תקינות (0% בכל היסודות).
+              <br />
+              בדוק שהקובץ מכיל תשובות בפורמט queId_X עם ערכים 1-4, ושמיפוי השאלות מוגדר נכון.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* High concentration alert */}
-        {distributionStats.hasHighConcentration && distributionMode === 'normal' && (
+        {distributionStats.hasHighConcentration && distributionMode === 'normal' && !zeroProfileStats.hasIssue && (
           <Alert variant="destructive" className="border-2">
             <AlertTriangle className="h-5 w-5" />
             <AlertTitle className="text-right font-bold">ריכוזיות גבוהה זוהתה!</AlertTitle>
