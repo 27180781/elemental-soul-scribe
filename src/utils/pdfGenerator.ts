@@ -110,8 +110,8 @@ const loadKanubaFont = async (pdf: jsPDF): Promise<void> => {
       };
 
       const [regularB64, boldB64] = await Promise.all([
-        fetchAndConvert('/fonts/kanuba-regular.woff'),
-        fetchAndConvert('/fonts/kanuba-bold.woff'),
+        fetchAndConvert('./fonts/kanuba-regular.woff'),
+        fetchAndConvert('./fonts/kanuba-bold.woff'),
       ]);
 
       (window as any).__kanuba_regular_b64 = regularB64;
