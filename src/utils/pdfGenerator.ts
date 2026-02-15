@@ -156,7 +156,7 @@ const reverseHebrew = (text: string): string => {
 
   // Reverse characters only within Hebrew runs (jsPDF draws LTR)
   return reversed.map(seg => {
-    if (/[\u0590-\u05FF]/.test(seg)) {
+    if (/[\u0590-\u05FF]/.test(seg) || /^[0-9]+$/.test(seg)) {
       return seg.split('').reverse().join('');
     }
     return seg;
@@ -456,9 +456,9 @@ const renderProfileToPDF = (pdf: jsPDF, profile: ParticipantProfile, settings: P
     pdf.setFont(FONT_NAME, 'normal');
     pdf.setFontSize(descFontSize);
     
-    const descText = reverseHebrew(profile.matchedPersonality.description);
     const descMaxWidth = maxWidthMm - boxPaddingMm * 2;
-    const descLines = pdf.splitTextToSize(descText, descMaxWidth) as string[];
+    const rawDescLines = pdf.splitTextToSize(profile.matchedPersonality.description, descMaxWidth) as string[];
+    const descLines = rawDescLines.map(line => reverseHebrew(line));
     const lineHeightMm = descFontSize * 0.5 * (settings.personalityLineHeight || 1.7);
     const descTotalHeight = descLines.length * lineHeightMm;
     
