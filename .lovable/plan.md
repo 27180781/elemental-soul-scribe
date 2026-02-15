@@ -1,51 +1,34 @@
 
 
-# תיקון היפוך מספרים ב-reverseHebrew
+# תיקון הורדת PDF באופליין - נתיבי גופנים
 
 ## הבעיה
 
-הפונקציה `reverseHebrew` מפעילה היפוך תווים על כל מספר, בין אם הוא חלק משורה עברית ובין אם הוא עומד לבד:
+בקובץ `src/utils/pdfGenerator.ts`, שורות 113-114, הגופנים נטענים עם נתיבים מוחלטים:
 
-- **שורה מעורבת** (עברית + מספר): `"משתתף מספר 103"` - היפוך הסגמנטים הופך את סדר ה-"103", אז צריך להפוך את הספרות חזרה כדי שזה ייקרא נכון. **היפוך ספרות = נכון.**
-- **שורה עם מספר בלבד**: `"103"` - אין היפוך סגמנטים משמעותי (סגמנט יחיד), אז היפוך הספרות הופך את "103" ל-"301". **היפוך ספרות = שגוי.**
+```ts
+fetchAndConvert('/fonts/kanuba-regular.woff'),
+fetchAndConvert('/fonts/kanuba-bold.woff'),
+```
+
+בסביבת Electron או כל גישה דרך `file://`, נתיב מוחלט כמו `/fonts/...` מפנה לשורש מערכת הקבצים במקום לתיקיית האפליקציה -- וכתוצאה מכך ה-fetch נכשל.
 
 ## הפתרון
 
-להפעיל היפוך ספרות רק כשהשורה מכילה גם טקסט עברי. אם אין עברית בשורה, המספרים נשארים כמו שהם.
-
-## שינוי טכני
-
-### קובץ: `src/utils/pdfGenerator.ts` (שורות 148-164)
+שינוי הנתיבים לנתיבים יחסיים (`./fonts/...`), בהתאמה להגדרת `base: "./"` שכבר קיימת ב-Vite config:
 
 ```ts
-const reverseHebrew = (text: string): string => {
-  const segments = text.match(
-    /[\u0590-\u05FF]+|[0-9]+|[a-zA-Z]+|[\s]+|[^\u0590-\u05FFa-zA-Z0-9\s]+/g
-  ) || [text];
-
-  // Check if the text contains any Hebrew characters
-  const hasHebrew = /[\u0590-\u05FF]/.test(text);
-
-  // Reverse segment order (RTL base direction)
-  const reversed = [...segments].reverse();
-
-  // Reverse characters within Hebrew runs always;
-  // Reverse digits only when mixed with Hebrew text
-  return reversed.map(seg => {
-    if (/[\u0590-\u05FF]/.test(seg)) {
-      return seg.split('').reverse().join('');
-    }
-    if (hasHebrew && /^[0-9]+$/.test(seg)) {
-      return seg.split('').reverse().join('');
-    }
-    return seg;
-  }).join('');
-};
+fetchAndConvert('./fonts/kanuba-regular.woff'),
+fetchAndConvert('./fonts/kanuba-bold.woff'),
 ```
 
-ההבדל היחיד: התנאי `hasHebrew &&` לפני היפוך ספרות - מספרים מתהפכים רק כשהם חלק משורה שמכילה עברית.
+## שינויים טכניים
 
-| קובץ | שינוי |
-|-------|--------|
-| `src/utils/pdfGenerator.ts` | הוספת תנאי `hasHebrew` להיפוך ספרות בפונקציית `reverseHebrew` |
+### קובץ: `src/utils/pdfGenerator.ts`
 
+| שורה | לפני | אחרי |
+|-------|-------|-------|
+| 113 | `fetchAndConvert('/fonts/kanuba-regular.woff')` | `fetchAndConvert('./fonts/kanuba-regular.woff')` |
+| 114 | `fetchAndConvert('/fonts/kanuba-bold.woff')` | `fetchAndConvert('./fonts/kanuba-bold.woff')` |
+
+שינוי של 2 תווים בלבד (הוספת נקודה לפני כל `/`). ללא שינויים נוספים.
