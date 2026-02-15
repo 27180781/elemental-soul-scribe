@@ -9,12 +9,27 @@ const ELEMENT_NAMES = {
   earth: "עפר",
 };
 
-// Black and white patterns for each element
 const ELEMENT_PATTERNS = {
-  fire: { fill: '#000000', pattern: 'solid' },
-  water: { fill: '#666666', pattern: 'horizontal-lines' },
-  air: { fill: '#999999', pattern: 'diagonal-lines' },
-  earth: { fill: '#cccccc', pattern: 'dots' },
+  fire: { fill: '#000000', pattern: 'solid' as const },
+  water: { fill: '#666666', pattern: 'horizontal-lines' as const },
+  air: { fill: '#999999', pattern: 'diagonal-lines' as const },
+  earth: { fill: '#cccccc', pattern: 'dots' as const },
+};
+
+// Reverse Hebrew string for jsPDF RTL support
+const reverseHebrew = (text: string): string => {
+  // Split into segments of Hebrew and non-Hebrew
+  const segments = text.match(/[\u0590-\u05FF\s]+|[^\u0590-\u05FF\s]+/g) || [text];
+  
+  // Reverse Hebrew segments, keep numbers/latin as-is
+  const processed = segments.map(seg => {
+    if (/[\u0590-\u05FF]/.test(seg)) {
+      return seg.split('').reverse().join('');
+    }
+    return seg;
+  });
+  
+  return processed.reverse().join('');
 };
 
 const createPattern = (ctx: CanvasRenderingContext2D, type: string, color: string): CanvasPattern | string => {
@@ -61,21 +76,21 @@ const createPattern = (ctx: CanvasRenderingContext2D, type: string, color: strin
   return ctx.createPattern(patternCanvas, 'repeat') || color;
 };
 
+// Create pie chart on a smaller canvas, return as JPEG data URL
 const create3DPieChart = (elementScores: any, width: number, height: number, percentageFontSize: number): string => {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d')!;
   
-  // White background
   ctx.fillStyle = 'white';
   ctx.fillRect(0, 0, width, height);
   
   const centerX = width / 2;
   const centerY = height / 2 - 10;
-  const radius = Math.min(width, height) / 3.5; // Slightly smaller to make room for external labels
-  const depth = 30;
-  
+  const radius = Math.min(width, height) / 3.5;
+  const depth = 20; // reduced from 30
+
   const elements = [
     { name: 'fire', value: elementScores.fire, pattern: ELEMENT_PATTERNS.fire },
     { name: 'water', value: elementScores.water, pattern: ELEMENT_PATTERNS.water },
@@ -85,93 +100,66 @@ const create3DPieChart = (elementScores: any, width: number, height: number, per
   
   let startAngle = -Math.PI / 2;
   
-  // Draw 3D depth layers (bottom to top)
-  for (let d = depth; d >= 0; d -= 2) {
+  // Draw 3D depth layers
+  for (let d = depth; d >= 0; d -= 3) { // step 3 instead of 2
     let currentAngle = startAngle;
-    
     elements.forEach((element) => {
       const sliceAngle = (element.value / 100) * 2 * Math.PI;
-      
       if (element.value > 0) {
         ctx.beginPath();
         ctx.arc(centerX, centerY + d, radius, currentAngle, currentAngle + sliceAngle);
         ctx.lineTo(centerX, centerY + d);
         ctx.closePath();
-        
-        // Darker shade for depth
         const depthShade = Math.floor(parseInt(element.pattern.fill.slice(1), 16) * 0.7);
         ctx.fillStyle = `#${depthShade.toString(16).padStart(6, '0')}`;
         ctx.fill();
-        
         if (d === depth) {
           ctx.strokeStyle = '#000000';
           ctx.lineWidth = 1;
           ctx.stroke();
         }
       }
-      
       currentAngle += sliceAngle;
     });
   }
   
-  // Collect label positions for external labels
-  const labelPositions: Array<{
-    element: typeof elements[0];
-    midAngle: number;
-    sliceAngle: number;
-  }> = [];
+  // Label positions
+  const labelPositions: Array<{ element: typeof elements[0]; midAngle: number }> = [];
   
-  // Draw top surface with patterns
+  // Top surface with patterns
   let topAngle = startAngle;
   elements.forEach((element) => {
     const sliceAngle = (element.value / 100) * 2 * Math.PI;
-    
     if (element.value > 0) {
       ctx.beginPath();
       ctx.arc(centerX, centerY, radius, topAngle, topAngle + sliceAngle);
       ctx.lineTo(centerX, centerY);
       ctx.closePath();
-      
       ctx.fillStyle = createPattern(ctx, element.pattern.pattern, element.pattern.fill) as string | CanvasPattern;
       ctx.fill();
-      
       ctx.strokeStyle = '#000000';
       ctx.lineWidth = 2;
       ctx.stroke();
-      
-      // Store label info for external positioning
-      labelPositions.push({
-        element,
-        midAngle: topAngle + sliceAngle / 2,
-        sliceAngle
-      });
+      labelPositions.push({ element, midAngle: topAngle + sliceAngle / 2 });
     }
-    
     topAngle += sliceAngle;
   });
   
-  // Draw external labels with leader lines
-  const outerLabelRadius = radius + 40; // Distance from center to label
-  const lineStartRadius = radius + 8; // Where the line starts (just outside pie)
-  const lineBendRadius = radius + 25; // Where the line bends
+  // External labels with leader lines
+  const outerLabelRadius = radius + 40;
+  const lineStartRadius = radius + 8;
+  const lineBendRadius = radius + 25;
   
   labelPositions.forEach(({ element, midAngle }) => {
-    // Calculate positions
     const lineStartX = centerX + Math.cos(midAngle) * lineStartRadius;
     const lineStartY = centerY + Math.sin(midAngle) * lineStartRadius;
-    
     const lineBendX = centerX + Math.cos(midAngle) * lineBendRadius;
     const lineBendY = centerY + Math.sin(midAngle) * lineBendRadius;
-    
     const labelX = centerX + Math.cos(midAngle) * outerLabelRadius;
-    const labelY = centerY + Math.sin(midAngle) * outerLabelRadius;
-    
-    // Determine if label is on left or right side
     const isRightSide = Math.cos(midAngle) > 0;
     const horizontalOffset = isRightSide ? 20 : -20;
     const finalLabelX = labelX + horizontalOffset;
     
-    // Draw leader line (two segments: angled then horizontal)
     ctx.beginPath();
     ctx.moveTo(lineStartX, lineStartY);
     ctx.lineTo(lineBendX, lineBendY);
@@ -180,151 +168,212 @@ const create3DPieChart = (elementScores: any, width: number, height: number, per
     ctx.lineWidth = 1.5;
     ctx.stroke();
     
-    // Draw label background
     const labelText = `${element.value.toFixed(0)}%`;
     ctx.font = `bold ${percentageFontSize}px Arial`;
     const textWidth = ctx.measureText(labelText).width;
     const padding = 6;
-    
     const bgX = isRightSide ? finalLabelX : finalLabelX - textWidth - padding * 2;
     const bgY = lineBendY - percentageFontSize / 2 - padding;
     const bgWidth = textWidth + padding * 2;
     const bgHeight = percentageFontSize + padding * 2;
     
-    // White background with border
     ctx.fillStyle = 'white';
     ctx.fillRect(bgX, bgY, bgWidth, bgHeight);
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 1.5;
     ctx.strokeRect(bgX, bgY, bgWidth, bgHeight);
     
-    // Draw text
     ctx.fillStyle = '#000000';
     ctx.textAlign = isRightSide ? 'left' : 'right';
     ctx.textBaseline = 'middle';
     ctx.fillText(labelText, isRightSide ? finalLabelX + padding : finalLabelX - padding, lineBendY);
   });
   
-  return canvas.toDataURL('image/png');
+  // Return as JPEG for speed
+  return canvas.toDataURL('image/jpeg', 0.85);
 };
 
-// Create pattern SVG for legend boxes
-const createPatternSVG = (type: string, fill: string): string => {
-  const patterns: Record<string, string> = {
-    'solid': `<rect width="100%" height="100%" fill="${fill}"/>`,
-    'horizontal-lines': `<rect width="100%" height="100%" fill="white"/><line x1="0" y1="3" x2="10" y2="3" stroke="${fill}" stroke-width="2"/><line x1="0" y1="7" x2="10" y2="7" stroke="${fill}" stroke-width="2"/>`,
-    'diagonal-lines': `<rect width="100%" height="100%" fill="white"/><line x1="0" y1="0" x2="10" y2="10" stroke="${fill}" stroke-width="2"/><line x1="-5" y1="5" x2="5" y2="15" stroke="${fill}" stroke-width="2"/><line x1="5" y1="-5" x2="15" y2="5" stroke="${fill}" stroke-width="2"/>`,
-    'dots': `<rect width="100%" height="100%" fill="white"/><circle cx="5" cy="5" r="2" fill="${fill}"/>`,
-  };
+// Draw a pattern-filled rectangle directly on a small canvas and return as data URL
+const createLegendPatternImage = (type: string, fill: string, size: number): string => {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  ctx.fillStyle = createPattern(ctx, type, fill) as string | CanvasPattern;
+  ctx.fillRect(0, 0, size, size);
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(0, 0, size, size);
+  return canvas.toDataURL('image/jpeg', 0.9);
+};
+
+// Convert px-based settings to mm for jsPDF (assuming 96 DPI screen reference)
+const pxToMm = (px: number): number => px * 0.264583;
+
+// Render a single profile directly onto jsPDF page
+const renderProfileToPDF = (pdf: jsPDF, profile: ParticipantProfile, settings: PDFSettings) => {
+  const pageWidth = 210; // A4 mm
+  const contentLeftMm = pxToMm(settings.contentLeft);
+  const contentRightMm = pxToMm(settings.contentRight);
+  const contentTopMm = pxToMm(settings.contentTop);
+  const usableWidth = pageWidth - contentLeftMm - contentRightMm;
+  const centerX = pageWidth / 2;
   
-  const patternContent = patterns[type] || patterns['solid'];
-  return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10">${patternContent}</svg>`)}`;
-};
-
-const createProfileHTML = (profile: ParticipantProfile, settings: PDFSettings): HTMLElement => {
-  const container = document.createElement('div');
-  container.style.width = '210mm';
-  container.style.height = '297mm';
-  container.style.position = 'relative';
-  container.style.backgroundColor = 'white';
-  container.style.direction = 'rtl';
-  container.style.fontFamily = 'Kanuba, Arial, sans-serif';
-  container.style.boxSizing = 'border-box';
-  container.style.overflow = 'hidden';
-
-  const pieChartDataUrl = create3DPieChart(
-    profile.elementScores, 
-    settings.chartCanvasWidth, 
-    settings.chartCanvasHeight,
-    settings.chartPercentageFontSize
-  );
-
-  container.innerHTML = `
-    <div style="position: relative; width: 100%; height: 100%; background: white;">
-      <!-- Content Container with proper margins -->
-      <div style="position: absolute; top: ${settings.contentTop}px; left: ${settings.contentLeft}px; right: ${settings.contentRight}px; bottom: ${settings.contentBottom}px; display: flex; flex-direction: column; align-items: center;">
-        
-        <!-- Header -->
-        <div style="text-align: center; margin-bottom: ${settings.headerMarginBottom}px;">
-          <h1 style="color: #000000; font-size: ${settings.titleFontSize}px; margin: 0 0 10px 0; font-weight: 700; font-family: Kanuba, Arial, sans-serif; letter-spacing: 2px; text-transform: uppercase;">
-            משתתף מספר ${profile.id}
-          </h1>
-          ${profile.name ? `<h2 style="color: #333333; font-size: ${settings.nameFontSize}px; margin: 0; font-weight: 400; font-family: Kanuba, Arial, sans-serif;">${profile.name}</h2>` : ''}
-        </div>
-
-        <!-- 3D Pie Chart -->
-        <div style="margin: ${settings.chartMarginTop}px 0 ${settings.chartMarginBottom}px 0;">
-          <img src="${pieChartDataUrl}" style="width: ${settings.chartWidth}px; height: ${settings.chartHeight}px; display: block;" />
-        </div>
-
-        <!-- Legend with patterns -->
-        <div style="display: flex; justify-content: center; gap: ${settings.legendGap}px; margin: ${settings.legendMarginTop}px 0; flex-wrap: wrap;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="width: ${settings.legendBoxSize}px; height: ${settings.legendBoxSize}px; background: #000000; border: 2px solid #000000; border-radius: 2px;"></div>
-            <span style="font-size: ${settings.legendFontSize}px; font-weight: 700; font-family: Kanuba, Arial, sans-serif; color: #000000;">${ELEMENT_NAMES.fire}</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="width: ${settings.legendBoxSize}px; height: ${settings.legendBoxSize}px; background: url('${createPatternSVG('horizontal-lines', '#666666')}'); border: 2px solid #000000; border-radius: 2px;"></div>
-            <span style="font-size: ${settings.legendFontSize}px; font-weight: 700; font-family: Kanuba, Arial, sans-serif; color: #000000;">${ELEMENT_NAMES.water}</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="width: ${settings.legendBoxSize}px; height: ${settings.legendBoxSize}px; background: url('${createPatternSVG('diagonal-lines', '#999999')}'); border: 2px solid #000000; border-radius: 2px;"></div>
-            <span style="font-size: ${settings.legendFontSize}px; font-weight: 700; font-family: Kanuba, Arial, sans-serif; color: #000000;">${ELEMENT_NAMES.air}</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="width: ${settings.legendBoxSize}px; height: ${settings.legendBoxSize}px; background: url('${createPatternSVG('dots', '#cccccc')}'); border: 2px solid #000000; border-radius: 2px;"></div>
-            <span style="font-size: ${settings.legendFontSize}px; font-weight: 700; font-family: Kanuba, Arial, sans-serif; color: #000000;">${ELEMENT_NAMES.earth}</span>
-          </div>
-        </div>
-
-        ${profile.matchedPersonality ? `
-          <div style="background: white; padding: ${settings.personalityPadding}px; border-radius: ${settings.personalityBorderRadius}px; margin-top: ${settings.personalityMarginTop}px; border: 3px solid #000000; box-shadow: 4px 4px 0px #000000; width: 100%; max-width: ${settings.personalityMaxWidth}px;">
-            <div style="text-align: center; margin-bottom: 12px;">
-              <span style="display: inline-block; background: #000000; color: white; padding: 8px 20px; border-radius: 0; font-size: ${settings.personalityTitleFontSize}px; font-weight: 700; font-family: Kanuba, Arial, sans-serif; letter-spacing: 1px;">
-                ניתוח אישיות${profile.matchedPersonality.name ? ` - ${profile.matchedPersonality.name}` : ''}
-              </span>
-            </div>
-            <div style="line-height: ${settings.personalityLineHeight}; font-size: ${settings.personalityTextFontSize}px; color: #000000; text-align: center; font-weight: 400; font-family: Kanuba, Arial, sans-serif;">
-              ${profile.matchedPersonality.description}
-            </div>
-          </div>
-        ` : ''}
-      </div>
-    </div>
-  `;
-
-  return container;
+  let y = contentTopMm;
+  
+  // --- Title: "משתתף מספר X" ---
+  const titleFontSize = Math.max(12, pxToMm(settings.titleFontSize) * 1.8);
+  pdf.setFont('Helvetica', 'bold');
+  pdf.setFontSize(titleFontSize);
+  pdf.setTextColor(0, 0, 0);
+  const titleText = reverseHebrew(`משתתף מספר ${profile.id}`);
+  pdf.text(titleText, centerX, y, { align: 'center' });
+  y += titleFontSize * 0.5 + 3;
+  
+  // --- Name ---
+  if (profile.name) {
+    const nameFontSize = Math.max(10, pxToMm(settings.nameFontSize) * 1.8);
+    pdf.setFont('Helvetica', 'normal');
+    pdf.setFontSize(nameFontSize);
+    pdf.setTextColor(51, 51, 51);
+    const nameText = reverseHebrew(profile.name);
+    pdf.text(nameText, centerX, y, { align: 'center' });
+    y += nameFontSize * 0.5 + 2;
+  }
+  
+  y += pxToMm(settings.headerMarginBottom);
+  
+  // --- Pie Chart ---
+  y += pxToMm(settings.chartMarginTop);
+  const chartWidthMm = pxToMm(settings.chartWidth);
+  const chartHeightMm = pxToMm(settings.chartHeight);
+  
+  // Use smaller canvas for speed
+  const canvasW = Math.min(settings.chartCanvasWidth, 400);
+  const canvasH = Math.min(settings.chartCanvasHeight, 300);
+  const pieDataUrl = create3DPieChart(profile.elementScores, canvasW, canvasH, settings.chartPercentageFontSize);
+  
+  const chartX = centerX - chartWidthMm / 2;
+  pdf.addImage(pieDataUrl, 'JPEG', chartX, y, chartWidthMm, chartHeightMm);
+  y += chartHeightMm;
+  y += pxToMm(settings.chartMarginBottom);
+  
+  // --- Legend ---
+  y += pxToMm(settings.legendMarginTop);
+  const legendFontSize = Math.max(8, pxToMm(settings.legendFontSize) * 1.8);
+  const boxSizeMm = pxToMm(settings.legendBoxSize);
+  const gapMm = pxToMm(settings.legendGap);
+  
+  // Pre-create legend pattern images
+  const elementKeys: Array<'fire' | 'water' | 'air' | 'earth'> = ['fire', 'water', 'air', 'earth'];
+  const legendItems = elementKeys.map(key => ({
+    name: ELEMENT_NAMES[key],
+    patternImg: createLegendPatternImage(ELEMENT_PATTERNS[key].pattern, ELEMENT_PATTERNS[key].fill, 40),
+  }));
+  
+  // Calculate total legend width for centering
+  pdf.setFont('Helvetica', 'bold');
+  pdf.setFontSize(legendFontSize);
+  const itemWidths = legendItems.map(item => {
+    const textW = pdf.getTextWidth(reverseHebrew(item.name));
+    return boxSizeMm + 2 + textW;
+  });
+  const totalLegendWidth = itemWidths.reduce((a, b) => a + b, 0) + (legendItems.length - 1) * gapMm;
+  let legendX = centerX + totalLegendWidth / 2; // start from right for RTL
+  
+  legendItems.forEach((item, i) => {
+    const textW = pdf.getTextWidth(reverseHebrew(item.name));
+    
+    // Text first (right side in RTL)
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(reverseHebrew(item.name), legendX, y + boxSizeMm * 0.7, { align: 'right' });
+    legendX -= textW + 2;
+    
+    // Pattern box
+    pdf.addImage(item.patternImg, 'JPEG', legendX - boxSizeMm, y, boxSizeMm, boxSizeMm);
+    legendX -= boxSizeMm + gapMm;
+  });
+  
+  y += boxSizeMm + 4;
+  
+  // --- Personality Box ---
+  if (profile.matchedPersonality) {
+    y += pxToMm(settings.personalityMarginTop);
+    const boxPaddingMm = pxToMm(settings.personalityPadding);
+    const maxWidthMm = Math.min(pxToMm(settings.personalityMaxWidth), usableWidth);
+    const boxX = centerX - maxWidthMm / 2;
+    
+    // Title badge
+    const personalityTitleFontSize = Math.max(8, pxToMm(settings.personalityTitleFontSize) * 1.8);
+    pdf.setFont('Helvetica', 'bold');
+    pdf.setFontSize(personalityTitleFontSize);
+    
+    const badgeText = reverseHebrew(
+      profile.matchedPersonality.name 
+        ? `ניתוח אישיות - ${profile.matchedPersonality.name}` 
+        : 'ניתוח אישיות'
+    );
+    const badgeTextWidth = pdf.getTextWidth(badgeText);
+    const badgePadH = 6;
+    const badgePadV = 3;
+    const badgeWidth = badgeTextWidth + badgePadH * 2;
+    const badgeHeight = personalityTitleFontSize * 0.5 + badgePadV * 2;
+    const badgeX = centerX - badgeWidth / 2;
+    
+    // Description text
+    const descFontSize = Math.max(7, pxToMm(settings.personalityTextFontSize) * 1.8);
+    pdf.setFont('Helvetica', 'normal');
+    pdf.setFontSize(descFontSize);
+    
+    const descText = reverseHebrew(profile.matchedPersonality.description);
+    const descMaxWidth = maxWidthMm - boxPaddingMm * 2;
+    const descLines = pdf.splitTextToSize(descText, descMaxWidth) as string[];
+    const lineHeightMm = descFontSize * 0.5 * (settings.personalityLineHeight || 1.7);
+    const descTotalHeight = descLines.length * lineHeightMm;
+    
+    const boxHeight = badgeHeight + 4 + descTotalHeight + boxPaddingMm * 2;
+    
+    // Box border + shadow
+    pdf.setFillColor(0, 0, 0);
+    pdf.rect(boxX + 1.5, y + 1.5, maxWidthMm, boxHeight, 'F'); // shadow
+    pdf.setFillColor(255, 255, 255);
+    pdf.rect(boxX, y, maxWidthMm, boxHeight, 'F');
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.8);
+    pdf.rect(boxX, y, maxWidthMm, boxHeight, 'S');
+    
+    // Badge
+    const badgeY = y + boxPaddingMm;
+    pdf.setFillColor(0, 0, 0);
+    pdf.rect(badgeX, badgeY, badgeWidth, badgeHeight, 'F');
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont('Helvetica', 'bold');
+    pdf.setFontSize(personalityTitleFontSize);
+    pdf.text(badgeText, centerX, badgeY + badgeHeight / 2 + personalityTitleFontSize * 0.15, { align: 'center' });
+    
+    // Description
+    pdf.setTextColor(0, 0, 0);
+    pdf.setFont('Helvetica', 'normal');
+    pdf.setFontSize(descFontSize);
+    let descY = badgeY + badgeHeight + 4;
+    descLines.forEach((line: string) => {
+      pdf.text(line, centerX, descY, { align: 'center' });
+      descY += lineHeightMm;
+    });
+  }
 };
 
 export const generatePDF = async (profile: ParticipantProfile, settings: PDFSettings) => {
   try {
     toast.loading("מייצר PDF...");
     
-    const element = createProfileHTML(profile, settings);
-    document.body.appendChild(element);
-
-    const html2canvas = (await import('html2canvas')).default;
-    const canvas = await html2canvas(element, {
-      scale: 3,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      width: 794,
-      height: 1123,
-    });
-
-    document.body.removeChild(element);
-
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
       format: 'a4',
     });
 
-    const imgWidth = 210;
-    const imgHeight = 297;
-    
-    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight);
+    renderProfileToPDF(pdf, profile, settings);
     pdf.save(`personality-profile-${profile.id}.pdf`);
     
     toast.dismiss();
@@ -336,7 +385,7 @@ export const generatePDF = async (profile: ParticipantProfile, settings: PDFSett
   }
 };
 
-// Parallel processing helper function
+// Parallel processing helper
 const processInParallel = async <T, R>(
   items: T[],
   concurrency: number,
@@ -356,7 +405,6 @@ const processInParallel = async <T, R>(
     }
   };
 
-  // Start multiple workers in parallel
   const workers = Array(Math.min(concurrency, items.length))
     .fill(null)
     .map(() => processNext());
@@ -381,8 +429,6 @@ export const generateAllPDFs = async (
   let overallProcessed = 0;
   
   try {
-    const html2canvas = (await import('html2canvas')).default;
-
     for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
       const startIndex = batchIndex * batchSize;
       const endIndex = Math.min(startIndex + batchSize, profiles.length);
@@ -396,51 +442,21 @@ export const generateAllPDFs = async (
         format: 'a4',
       });
 
-      // Step 1: Create all HTML elements (fast)
-      const elements = batchProfiles.map(profile => {
-        const element = createProfileHTML(profile, settings);
-        document.body.appendChild(element);
-        return { profile, element };
-      });
-
-      // Step 2: Convert to images in parallel
-      const canvasResults = await processInParallel(
-        elements,
-        parallelWorkers,
-        async ({ element }, index) => {
-          const canvas = await html2canvas(element, {
-            scale: 3,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff',
-            width: 794,
-            height: 1123,
-          });
-          overallProcessed++;
-          onProgress?.(overallProcessed, profiles.length, `ממיר לתמונה ${overallProcessed} מתוך ${profiles.length}`);
-          return canvas;
-        }
-      );
-
-      // Clean up DOM
-      elements.forEach(({ element }) => document.body.removeChild(element));
-
-      // Step 3: Assemble PDF (fast)
-      const imgWidth = 210;
-      const imgHeight = 297;
-      
-      canvasResults.forEach((canvas, index) => {
+      // Draw each profile directly on PDF pages
+      batchProfiles.forEach((profile, index) => {
         if (index > 0) {
           pdf.addPage();
         }
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight);
+        renderProfileToPDF(pdf, profile, settings);
+        overallProcessed++;
+        onProgress?.(overallProcessed, profiles.length, `מעבד משתתף ${overallProcessed} מתוך ${profiles.length}`);
       });
 
       pdf.save(`personality-profiles-${startIndex + 1}-${endIndex}.pdf`);
       
-      // Small delay between batches to prevent browser freeze
+      // Small delay between batches
       if (batchIndex < totalBatches - 1) {
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
     
