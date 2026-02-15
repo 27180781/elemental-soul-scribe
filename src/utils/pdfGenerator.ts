@@ -2,6 +2,53 @@ import { ParticipantProfile, PDFSettings } from "@/types/personality";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 
+// Font loading cache
+let fontLoaded = false;
+let fontLoadPromise: Promise<void> | null = null;
+
+const loadKanubaFont = async (pdf: jsPDF): Promise<void> => {
+  if (fontLoaded) {
+    pdf.addFileToVFS('kanuba-regular.ttf', (window as any).__kanuba_regular_b64);
+    pdf.addFont('kanuba-regular.ttf', 'Kanuba', 'normal');
+    pdf.addFileToVFS('kanuba-bold.ttf', (window as any).__kanuba_bold_b64);
+    pdf.addFont('kanuba-bold.ttf', 'Kanuba', 'bold');
+    return;
+  }
+
+  if (!fontLoadPromise) {
+    fontLoadPromise = (async () => {
+      const toBase64 = async (url: string): Promise<string> => {
+        const response = await fetch(url);
+        const buffer = await response.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary);
+      };
+
+      const [regularB64, boldB64] = await Promise.all([
+        toBase64('/fonts/kanuba-regular.woff'),
+        toBase64('/fonts/kanuba-bold.woff'),
+      ]);
+
+      (window as any).__kanuba_regular_b64 = regularB64;
+      (window as any).__kanuba_bold_b64 = boldB64;
+      fontLoaded = true;
+    })();
+  }
+
+  await fontLoadPromise;
+
+  pdf.addFileToVFS('kanuba-regular.ttf', (window as any).__kanuba_regular_b64);
+  pdf.addFont('kanuba-regular.ttf', 'Kanuba', 'normal');
+  pdf.addFileToVFS('kanuba-bold.ttf', (window as any).__kanuba_bold_b64);
+  pdf.addFont('kanuba-bold.ttf', 'Kanuba', 'bold');
+};
+
+const FONT_NAME = 'Kanuba';
+
 const ELEMENT_NAMES = {
   fire: "אש",
   water: "מים",
@@ -223,7 +270,7 @@ const renderProfileToPDF = (pdf: jsPDF, profile: ParticipantProfile, settings: P
   
   // --- Title: "משתתף מספר X" ---
   const titleFontSize = Math.max(12, pxToMm(settings.titleFontSize) * 1.8);
-  pdf.setFont('Helvetica', 'bold');
+  pdf.setFont(FONT_NAME, 'bold');
   pdf.setFontSize(titleFontSize);
   pdf.setTextColor(0, 0, 0);
   const titleText = reverseHebrew(`משתתף מספר ${profile.id}`);
@@ -233,7 +280,7 @@ const renderProfileToPDF = (pdf: jsPDF, profile: ParticipantProfile, settings: P
   // --- Name ---
   if (profile.name) {
     const nameFontSize = Math.max(10, pxToMm(settings.nameFontSize) * 1.8);
-    pdf.setFont('Helvetica', 'normal');
+    pdf.setFont(FONT_NAME, 'normal');
     pdf.setFontSize(nameFontSize);
     pdf.setTextColor(51, 51, 51);
     const nameText = reverseHebrew(profile.name);
@@ -272,7 +319,7 @@ const renderProfileToPDF = (pdf: jsPDF, profile: ParticipantProfile, settings: P
   }));
   
   // Calculate total legend width for centering
-  pdf.setFont('Helvetica', 'bold');
+  pdf.setFont(FONT_NAME, 'bold');
   pdf.setFontSize(legendFontSize);
   const itemWidths = legendItems.map(item => {
     const textW = pdf.getTextWidth(reverseHebrew(item.name));
@@ -305,7 +352,7 @@ const renderProfileToPDF = (pdf: jsPDF, profile: ParticipantProfile, settings: P
     
     // Title badge
     const personalityTitleFontSize = Math.max(8, pxToMm(settings.personalityTitleFontSize) * 1.8);
-    pdf.setFont('Helvetica', 'bold');
+    pdf.setFont(FONT_NAME, 'bold');
     pdf.setFontSize(personalityTitleFontSize);
     
     const badgeText = reverseHebrew(
@@ -322,7 +369,7 @@ const renderProfileToPDF = (pdf: jsPDF, profile: ParticipantProfile, settings: P
     
     // Description text
     const descFontSize = Math.max(7, pxToMm(settings.personalityTextFontSize) * 1.8);
-    pdf.setFont('Helvetica', 'normal');
+    pdf.setFont(FONT_NAME, 'normal');
     pdf.setFontSize(descFontSize);
     
     const descText = reverseHebrew(profile.matchedPersonality.description);
@@ -347,13 +394,13 @@ const renderProfileToPDF = (pdf: jsPDF, profile: ParticipantProfile, settings: P
     pdf.setFillColor(0, 0, 0);
     pdf.rect(badgeX, badgeY, badgeWidth, badgeHeight, 'F');
     pdf.setTextColor(255, 255, 255);
-    pdf.setFont('Helvetica', 'bold');
+    pdf.setFont(FONT_NAME, 'bold');
     pdf.setFontSize(personalityTitleFontSize);
     pdf.text(badgeText, centerX, badgeY + badgeHeight / 2 + personalityTitleFontSize * 0.15, { align: 'center' });
     
     // Description
     pdf.setTextColor(0, 0, 0);
-    pdf.setFont('Helvetica', 'normal');
+    pdf.setFont(FONT_NAME, 'normal');
     pdf.setFontSize(descFontSize);
     let descY = badgeY + badgeHeight + 4;
     descLines.forEach((line: string) => {
@@ -373,6 +420,7 @@ export const generatePDF = async (profile: ParticipantProfile, settings: PDFSett
       format: 'a4',
     });
 
+    await loadKanubaFont(pdf);
     renderProfileToPDF(pdf, profile, settings);
     pdf.save(`personality-profile-${profile.id}.pdf`);
     
@@ -441,6 +489,8 @@ export const generateAllPDFs = async (
         unit: 'mm',
         format: 'a4',
       });
+
+      await loadKanubaFont(pdf);
 
       // Draw each profile directly on PDF pages
       batchProfiles.forEach((profile, index) => {
