@@ -151,12 +151,19 @@ const reverseHebrew = (text: string): string => {
     /[\u0590-\u05FF]+|[0-9]+|[a-zA-Z]+|[\s]+|[^\u0590-\u05FFa-zA-Z0-9\s]+/g
   ) || [text];
 
+  // Check if the text contains any Hebrew characters
+  const hasHebrew = /[\u0590-\u05FF]/.test(text);
+
   // Reverse segment order (RTL base direction)
   const reversed = [...segments].reverse();
 
-  // Reverse characters only within Hebrew runs (jsPDF draws LTR)
+  // Reverse characters within Hebrew runs always;
+  // Reverse digits only when mixed with Hebrew text
   return reversed.map(seg => {
-    if (/[\u0590-\u05FF]/.test(seg) || /^[0-9]+$/.test(seg)) {
+    if (/[\u0590-\u05FF]/.test(seg)) {
+      return seg.split('').reverse().join('');
+    }
+    if (hasHebrew && /^[0-9]+$/.test(seg)) {
       return seg.split('').reverse().join('');
     }
     return seg;
