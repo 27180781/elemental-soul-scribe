@@ -1,79 +1,61 @@
 
 
-# תיקון פונקציית reverseHebrew לתמיכה נכונה ב-RTL
+# תיקון שתי בעיות ב-PDF: מספר משתתף הפוך וסדר פסקאות משובש
 
-## הבעיה
+## בעיה 1: "משתתף מספר 301" במקום "103"
 
-הפונקציה `reverseHebrew` הנוכחית כוללת רווחים (`\s`) בתוך הקבוצה של תווים עבריים בביטוי הרגולרי:
+**שורש הבעיה**: הפונקציה `reverseHebrew` הופכת את סדר כל הסגמנטים (כולל מספרים), אבל לא הופכת את התווים בתוך מספרים. כיוון ש-jsPDF מצייר שמאל-לימין אבל הקורא קורא מימין-לשמאל, המספר "103" שנשאר כפי שהוא הופך ויזואלית ל-"301".
+
+**פתרון**: להפוך גם את ספרות המספרים (בדיוק כמו מילים עבריות), כי הם עוברים את אותו היפוך ויזואלי.
+
+## בעיה 2: סדר פסקאות ורווחים משובשים בתיאור האישיות
+
+**שורש הבעיה**: הקוד מפעיל `reverseHebrew` על כל הטקסט של התיאור לפני ש-`splitTextToSize` מפצל אותו לשורות:
+
+```text
+reverseHebrew(כל הטקסט) -> splitTextToSize -> שורות
 ```
-/[\u0590-\u05FF\s]+/
+
+זה גורם לכך שהמילים האחרונות של הטקסט המקורי מופיעות בשורה הראשונה, והמילים הראשונות מופיעות בשורה האחרונה - הטקסט מתחיל מהסוף.
+
+**פתרון**: קודם לפצל את הטקסט המקורי לשורות, ואז להפעיל `reverseHebrew` על כל שורה בנפרד:
+
+```text
+splitTextToSize(טקסט מקורי) -> reverseHebrew(כל שורה) -> שורות תקינות
 ```
 
-זה גורם לכך שמשפט שלם כמו "את יצירתית חברותית ורגישה" נחשב כבלוק אחד, ואז היפוך תו-תו שלו מייצר שטויות כמו "השיגרו תיתורבח תיתריצי תא".
-
-## הפתרון
-
-לשכתב את `reverseHebrew` כך שתפרק את הטקסט לרצפים נפרדים: מילים עבריות, מספרים, רווחים, סימני פיסוק - כל אחד בנפרד.
-
-### האלגוריתם הנכון:
-1. פירוק הטקסט לרצפים: עברית | מספרים | לטינית | רווחים | פיסוק
-2. היפוך סדר הרצפים (כי הכיוון הבסיסי הוא RTL)
-3. היפוך תווים בתוך כל רצף עברי בלבד (כי jsPDF מצייר שמאל-לימין)
-4. מספרים ולטינית נשארים כפי שהם
-
-### דוגמה:
-- קלט: `"את יצירתית, חברותית ורגישה."`
-- רצפים: `["את", " ", "יצירתית", ",", " ", "חברותית", " ", "ורגישה", "."]`
-- היפוך סדר: `[".", "ורגישה", " ", "חברותית", " ", ",", "יצירתית", " ", "את"]`
-- היפוך תווים עבריים: `[".", "השיגרו", " ", "תיתורבח", " ", ",", "תיתריצי", " ", "תא"]`
-- jsPDF מצייר שמאל-לימין, קריאה מימין-לשמאל: **"את יצירתית, חברותית ורגישה."**
-
-## שינוי טכני
+## שינויים טכניים
 
 ### קובץ: `src/utils/pdfGenerator.ts`
 
-שורות 148-161 - החלפת הפונקציה `reverseHebrew`:
+**שינוי 1 - פונקציית `reverseHebrew` (שורות 148-164):**
+הוספת היפוך תווים גם למספרים:
 
-**לפני:**
 ```ts
-const reverseHebrew = (text: string): string => {
-  const segments = text.match(/[\u0590-\u05FF\s]+|[^\u0590-\u05FF\s]+/g) || [text];
-  const processed = segments.map(seg => {
-    if (/[\u0590-\u05FF]/.test(seg)) {
-      return seg.split('').reverse().join('');
-    }
-    return seg;
-  });
-  return processed.reverse().join('');
-};
+return reversed.map(seg => {
+  if (/[\u0590-\u05FF]/.test(seg) || /^[0-9]+$/.test(seg)) {
+    return seg.split('').reverse().join('');
+  }
+  return seg;
+}).join('');
 ```
 
-**אחרי:**
+**שינוי 2 - תיאור האישיות (שורות 455-463):**
+שינוי הסדר - קודם פיצול לשורות, אז היפוך כל שורה:
+
 ```ts
-const reverseHebrew = (text: string): string => {
-  // Split into fine-grained runs: Hebrew words, numbers, latin, whitespace, punctuation
-  const segments = text.match(
-    /[\u0590-\u05FF]+|[0-9]+|[a-zA-Z]+|[\s]+|[^\u0590-\u05FFa-zA-Z0-9\s]+/g
-  ) || [text];
+// לפני (שגוי):
+const descText = reverseHebrew(description);
+const descLines = pdf.splitTextToSize(descText, descMaxWidth);
 
-  // Reverse segment order (RTL base direction)
-  const reversed = [...segments].reverse();
-
-  // Reverse characters only within Hebrew runs (jsPDF draws LTR)
-  return reversed.map(seg => {
-    if (/[\u0590-\u05FF]/.test(seg)) {
-      return seg.split('').reverse().join('');
-    }
-    return seg;
-  }).join('');
-};
+// אחרי (תקין):
+const rawLines = pdf.splitTextToSize(description, descMaxWidth);
+const descLines = rawLines.map(line => reverseHebrew(line));
 ```
-
-ההבדל המרכזי: הרווחים (`\s`) כבר לא מקובצים עם אותיות עבריות, וסימני פיסוק (נקודה, פסיק) מופרדים כרצפים עצמאיים. כך כל מילה עברית מטופלת בנפרד.
 
 ## קבצים לעדכון
 
 | קובץ | שינוי |
 |-------|--------|
-| `src/utils/pdfGenerator.ts` | שכתוב פונקציית `reverseHebrew` בלבד (שורות 148-161) |
+| `src/utils/pdfGenerator.ts` | 1. הוספת היפוך מספרים ב-`reverseHebrew` 2. שינוי סדר פעולות בתיאור האישיות |
 
