@@ -1,46 +1,51 @@
 
 
-# תיקון מספר משתתף הפוך + הקטנת רווחי פסקאות
+# תיקון היפוך מספרים ב-reverseHebrew
 
-## בעיה 1: "301" במקום "103" בכותרת
+## הבעיה
 
-**שורש הבעיה**: הפונקציה `reverseHebrew` הופכת את סדר הסגמנטים (RTL), אבל משאירה מספרים כפי שהם. כשהקורא קורא את השורה מימין לשמאל, "103" נקרא כ-"301".
+הפונקציה `reverseHebrew` מפעילה היפוך תווים על כל מספר, בין אם הוא חלק משורה עברית ובין אם הוא עומד לבד:
 
-הפתרון הקודם (להפוך ספרות תמיד) שבר את המספר "103" שמופיע בגרף העוגה - אבל זה לא רלוונטי כי המספר בגרף מצויר כתמונה, לא דרך `reverseHebrew`.
+- **שורה מעורבת** (עברית + מספר): `"משתתף מספר 103"` - היפוך הסגמנטים הופך את סדר ה-"103", אז צריך להפוך את הספרות חזרה כדי שזה ייקרא נכון. **היפוך ספרות = נכון.**
+- **שורה עם מספר בלבד**: `"103"` - אין היפוך סגמנטים משמעותי (סגמנט יחיד), אז היפוך הספרות הופך את "103" ל-"301". **היפוך ספרות = שגוי.**
 
-**הפתרון**: להחזיר את היפוך הספרות בתוך `reverseHebrew`. המספר "103" בגרף לא עובר דרך הפונקציה הזו (הוא מצויר ישירות על Canvas), אז זה לא ישבור אותו.
+## הפתרון
 
-## בעיה 2: רווחים גדולים מדי בין פסקאות
+להפעיל היפוך ספרות רק כשהשורה מכילה גם טקסט עברי. אם אין עברית בשורה, המספרים נשארים כמו שהם.
 
-**המצב**: הרווח בין פסקאות הוא `lineHeightMm * 0.4` - עדיין גדול מדי.
+## שינוי טכני
 
-**הפתרון**: להקטין ל-`lineHeightMm * 0.2` (חמישית מגובה שורה רגילה).
-
-## שינויים טכניים
-
-### קובץ: `src/utils/pdfGenerator.ts`
-
-**שינוי 1 - שורות 157-163 - החזרת היפוך מספרים:**
+### קובץ: `src/utils/pdfGenerator.ts` (שורות 148-164)
 
 ```ts
-return reversed.map(seg => {
-  if (/[\u0590-\u05FF]/.test(seg) || /^[0-9]+$/.test(seg)) {
-    return seg.split('').reverse().join('');
-  }
-  return seg;
-}).join('');
+const reverseHebrew = (text: string): string => {
+  const segments = text.match(
+    /[\u0590-\u05FF]+|[0-9]+|[a-zA-Z]+|[\s]+|[^\u0590-\u05FFa-zA-Z0-9\s]+/g
+  ) || [text];
+
+  // Check if the text contains any Hebrew characters
+  const hasHebrew = /[\u0590-\u05FF]/.test(text);
+
+  // Reverse segment order (RTL base direction)
+  const reversed = [...segments].reverse();
+
+  // Reverse characters within Hebrew runs always;
+  // Reverse digits only when mixed with Hebrew text
+  return reversed.map(seg => {
+    if (/[\u0590-\u05FF]/.test(seg)) {
+      return seg.split('').reverse().join('');
+    }
+    if (hasHebrew && /^[0-9]+$/.test(seg)) {
+      return seg.split('').reverse().join('');
+    }
+    return seg;
+  }).join('');
+};
 ```
 
-**שינוי 2 - שורה 463 ושורה 493 - הקטנת רווח פסקאות:**
-
-שינוי מ-`0.4` ל-`0.2`:
-```ts
-const paragraphGapSize = lineHeightMm * 0.2;
-// ...
-const paragraphGap = lineHeightMm * 0.2;
-```
+ההבדל היחיד: התנאי `hasHebrew &&` לפני היפוך ספרות - מספרים מתהפכים רק כשהם חלק משורה שמכילה עברית.
 
 | קובץ | שינוי |
 |-------|--------|
-| `src/utils/pdfGenerator.ts` | 1. הוספת היפוך מספרים ב-reverseHebrew 2. הקטנת רווח פסקאות מ-0.4 ל-0.2 |
+| `src/utils/pdfGenerator.ts` | הוספת תנאי `hasHebrew` להיפוך ספרות בפונקציית `reverseHebrew` |
 
