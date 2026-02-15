@@ -2,7 +2,87 @@ import { ParticipantProfile, PDFSettings } from "@/types/personality";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 
-// Font loading cache
+// ---- WOFF to TTF converter ----
+const decompressZlib = async (data: Uint8Array): Promise<ArrayBuffer> => {
+  const ds = new DecompressionStream('deflate');
+  const writer = ds.writable.getWriter();
+  writer.write(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer);
+  writer.close();
+  const reader = ds.readable.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalLength = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    totalLength += value.length;
+  }
+  const result = new Uint8Array(totalLength);
+  let off = 0;
+  for (const chunk of chunks) { result.set(chunk, off); off += chunk.length; }
+  return result.buffer;
+};
+
+const woffToTtf = async (woffBuffer: ArrayBuffer): Promise<ArrayBuffer> => {
+  const view = new DataView(woffBuffer);
+  const signature = view.getUint32(0);
+  if (signature !== 0x774F4646) throw new Error('Not a WOFF file');
+
+  const flavor = view.getUint32(4);
+  const numTables = view.getUint16(12);
+  const totalSfntSize = view.getUint32(16);
+
+  const tables: Array<{ tag: number; woffOffset: number; compLength: number; origLength: number; origChecksum: number }> = [];
+  let dirOffset = 44;
+  for (let i = 0; i < numTables; i++) {
+    tables.push({
+      tag: view.getUint32(dirOffset),
+      woffOffset: view.getUint32(dirOffset + 4),
+      compLength: view.getUint32(dirOffset + 8),
+      origLength: view.getUint32(dirOffset + 12),
+      origChecksum: view.getUint32(dirOffset + 16),
+    });
+    dirOffset += 20;
+  }
+
+  // Build TTF
+  const ttf = new ArrayBuffer(totalSfntSize);
+  const ttfView = new DataView(ttf);
+  const ttfBytes = new Uint8Array(ttf);
+
+  ttfView.setUint32(0, flavor);
+  ttfView.setUint16(4, numTables);
+  let searchRange = 1, entrySelector = 0;
+  while (searchRange * 2 <= numTables) { searchRange *= 2; entrySelector++; }
+  searchRange *= 16;
+  ttfView.setUint16(6, searchRange);
+  ttfView.setUint16(8, entrySelector);
+  ttfView.setUint16(10, numTables * 16 - searchRange);
+
+  let dataOffset = (12 + numTables * 16 + 3) & ~3;
+
+  for (let i = 0; i < tables.length; i++) {
+    const t = tables[i];
+    const entryOff = 12 + i * 16;
+    ttfView.setUint32(entryOff, t.tag);
+    ttfView.setUint32(entryOff + 4, t.origChecksum);
+    ttfView.setUint32(entryOff + 8, dataOffset);
+    ttfView.setUint32(entryOff + 12, t.origLength);
+
+    const compData = new Uint8Array(woffBuffer, t.woffOffset, t.compLength);
+    if (t.compLength === t.origLength) {
+      ttfBytes.set(compData, dataOffset);
+    } else {
+      const decompressed = await decompressZlib(compData);
+      ttfBytes.set(new Uint8Array(decompressed), dataOffset);
+    }
+    dataOffset = (dataOffset + t.origLength + 3) & ~3;
+  }
+
+  return ttf;
+};
+
+// ---- Font loading cache ----
 let fontLoaded = false;
 let fontLoadPromise: Promise<void> | null = null;
 
@@ -17,10 +97,11 @@ const loadKanubaFont = async (pdf: jsPDF): Promise<void> => {
 
   if (!fontLoadPromise) {
     fontLoadPromise = (async () => {
-      const toBase64 = async (url: string): Promise<string> => {
+      const fetchAndConvert = async (url: string): Promise<string> => {
         const response = await fetch(url);
-        const buffer = await response.arrayBuffer();
-        const bytes = new Uint8Array(buffer);
+        const woffBuffer = await response.arrayBuffer();
+        const ttfBuffer = await woffToTtf(woffBuffer);
+        const bytes = new Uint8Array(ttfBuffer);
         let binary = '';
         for (let i = 0; i < bytes.length; i++) {
           binary += String.fromCharCode(bytes[i]);
@@ -29,8 +110,8 @@ const loadKanubaFont = async (pdf: jsPDF): Promise<void> => {
       };
 
       const [regularB64, boldB64] = await Promise.all([
-        toBase64('/fonts/kanuba-regular.woff'),
-        toBase64('/fonts/kanuba-bold.woff'),
+        fetchAndConvert('/fonts/kanuba-regular.woff'),
+        fetchAndConvert('/fonts/kanuba-bold.woff'),
       ]);
 
       (window as any).__kanuba_regular_b64 = regularB64;
