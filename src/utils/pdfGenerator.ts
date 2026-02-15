@@ -156,7 +156,7 @@ const reverseHebrew = (text: string): string => {
 
   // Reverse characters only within Hebrew runs (jsPDF draws LTR)
   return reversed.map(seg => {
-    if (/[\u0590-\u05FF]/.test(seg) || /^[0-9]+$/.test(seg)) {
+    if (/[\u0590-\u05FF]/.test(seg)) {
       return seg.split('').reverse().join('');
     }
     return seg;
@@ -460,7 +460,10 @@ const renderProfileToPDF = (pdf: jsPDF, profile: ParticipantProfile, settings: P
     const rawDescLines = pdf.splitTextToSize(profile.matchedPersonality.description, descMaxWidth) as string[];
     const descLines = rawDescLines.map(line => reverseHebrew(line));
     const lineHeightMm = descFontSize * 0.5 * (settings.personalityLineHeight || 1.7);
-    const descTotalHeight = descLines.length * lineHeightMm;
+    const paragraphGapSize = lineHeightMm * 0.4;
+    const emptyLines = descLines.filter(l => l.trim() === '').length;
+    const textLines = descLines.length - emptyLines;
+    const descTotalHeight = textLines * lineHeightMm + emptyLines * paragraphGapSize;
     
     const boxHeight = badgeHeight + 4 + descTotalHeight + boxPaddingMm * 2;
     
@@ -487,9 +490,14 @@ const renderProfileToPDF = (pdf: jsPDF, profile: ParticipantProfile, settings: P
     pdf.setFont(FONT_NAME, 'normal');
     pdf.setFontSize(descFontSize);
     let descY = badgeY + badgeHeight + 4;
+    const paragraphGap = lineHeightMm * 0.4; // smaller gap for paragraph breaks
     descLines.forEach((line: string) => {
-      pdf.text(line, centerX, descY, { align: 'center' });
-      descY += lineHeightMm;
+      if (line.trim() === '') {
+        descY += paragraphGap;
+      } else {
+        pdf.text(line, centerX, descY, { align: 'center' });
+        descY += lineHeightMm;
+      }
     });
   }
 };
