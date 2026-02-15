@@ -146,18 +146,21 @@ const ELEMENT_PATTERNS = {
 
 // Reverse Hebrew string for jsPDF RTL support
 const reverseHebrew = (text: string): string => {
-  // Split into segments of Hebrew and non-Hebrew
-  const segments = text.match(/[\u0590-\u05FF\s]+|[^\u0590-\u05FF\s]+/g) || [text];
-  
-  // Reverse Hebrew segments, keep numbers/latin as-is
-  const processed = segments.map(seg => {
+  // Split into fine-grained runs: Hebrew words, numbers, latin, whitespace, punctuation
+  const segments = text.match(
+    /[\u0590-\u05FF]+|[0-9]+|[a-zA-Z]+|[\s]+|[^\u0590-\u05FFa-zA-Z0-9\s]+/g
+  ) || [text];
+
+  // Reverse segment order (RTL base direction)
+  const reversed = [...segments].reverse();
+
+  // Reverse characters only within Hebrew runs (jsPDF draws LTR)
+  return reversed.map(seg => {
     if (/[\u0590-\u05FF]/.test(seg)) {
       return seg.split('').reverse().join('');
     }
     return seg;
-  });
-  
-  return processed.reverse().join('');
+  }).join('');
 };
 
 const createPattern = (ctx: CanvasRenderingContext2D, type: string, color: string): CanvasPattern | string => {
