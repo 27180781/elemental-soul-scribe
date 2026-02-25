@@ -130,6 +130,9 @@ const loadKanubaFont = async (pdf: jsPDF): Promise<void> => {
 
 const FONT_NAME = 'Kanuba';
 
+// Cache legend pattern images - identical for all participants
+let cachedLegendItems: Array<{ name: string; patternImg: string }> | null = null;
+
 const ELEMENT_NAMES = {
   fire: "אש",
   water: "מים",
@@ -402,12 +405,15 @@ const renderProfileToPDF = (pdf: jsPDF, profile: ParticipantProfile, settings: P
   const boxSizeMm = pxToMm(settings.legendBoxSize);
   const gapMm = pxToMm(settings.legendGap);
   
-  // Pre-create legend pattern images
-  const elementKeys: Array<'fire' | 'water' | 'air' | 'earth'> = ['fire', 'water', 'air', 'earth'];
-  const legendItems = elementKeys.map(key => ({
-    name: ELEMENT_NAMES[key],
-    patternImg: createLegendPatternImage(ELEMENT_PATTERNS[key].pattern, ELEMENT_PATTERNS[key].fill, 40),
-  }));
+  // Cache legend pattern images - identical for all participants
+  if (!cachedLegendItems) {
+    const elementKeys: Array<'fire' | 'water' | 'air' | 'earth'> = ['fire', 'water', 'air', 'earth'];
+    cachedLegendItems = elementKeys.map(key => ({
+      name: ELEMENT_NAMES[key],
+      patternImg: createLegendPatternImage(ELEMENT_PATTERNS[key].pattern, ELEMENT_PATTERNS[key].fill, 40),
+    }));
+  }
+  const legendItems = cachedLegendItems;
   
   // Calculate total legend width for centering
   pdf.setFont(FONT_NAME, 'bold');
