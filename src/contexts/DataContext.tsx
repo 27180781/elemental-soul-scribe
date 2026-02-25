@@ -108,16 +108,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    // Dictionary for O(1) lookup instead of O(k) find()
+    const mappingsDict = elementMappings.reduce((acc, curr) => {
+      acc[curr.questionId] = curr.answers;
+      return acc;
+    }, {} as Record<number, Record<number, string>>);
+
     // Helper function to calculate element scores for a participant
     const calculateElementScores = (participant: ParticipantData) => {
       const elementScores = { fire: 0, water: 0, air: 0, earth: 0 };
       let totalAnswers = 0;
 
       Object.entries(participant.answers).forEach(([questionId, answerNum]) => {
-        const mapping = elementMappings.find(m => m.questionId === parseInt(questionId));
-        if (mapping && mapping.answers[answerNum]) {
-          const element = mapping.answers[answerNum];
-          elementScores[element]++;
+        const mappingAnswers = mappingsDict[parseInt(questionId)];
+        if (mappingAnswers && mappingAnswers[answerNum]) {
+          const element = mappingAnswers[answerNum];
+          elementScores[element as keyof typeof elementScores]++;
           totalAnswers++;
         }
       });
