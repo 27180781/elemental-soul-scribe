@@ -40,6 +40,7 @@ function createWindow() {
   });
 
   win.loadFile(path.join(__dirname, 'dist/index.html'));
+win.webContents.openDevTools();
 }
 
 app.whenReady().then(createWindow);
