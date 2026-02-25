@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import localforage from 'localforage';
 import { ElementMapping, PersonalityType, ParticipantData, ParticipantProfile, PDFSettings, DistributionMode, AppSettings } from '@/types/personality';
 
 const DEFAULT_PDF_SETTINGS: PDFSettings = {
@@ -66,42 +67,68 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [pdfSettings, setPdfSettings] = useState<PDFSettings>(DEFAULT_PDF_SETTINGS);
   const [distributionMode, setDistributionMode] = useState<DistributionMode>('normal');
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from localStorage on mount
+  // Load from localForage on mount, with migration from localStorage
   useEffect(() => {
-    const savedMappings = localStorage.getItem('elementMappings');
-    const savedTypes = localStorage.getItem('personalityTypes');
-    const savedData = localStorage.getItem('participantData');
-    const savedPdfSettings = localStorage.getItem('pdfSettings');
-    const savedAppSettings = localStorage.getItem('appSettings');
+    const loadData = async () => {
+      try {
+        // Helper: load from IndexedDB, fallback to localStorage migration
+        const loadWithMigration = async (key: string): Promise<any> => {
+          let data = await localforage.getItem(key);
+          if (!data) {
+            const oldData = localStorage.getItem(key);
+            if (oldData) {
+              data = JSON.parse(oldData);
+              await localforage.setItem(key, data);
+              localStorage.removeItem(key);
+            }
+          }
+          return data;
+        };
 
-    if (savedMappings) setElementMappings(JSON.parse(savedMappings));
-    if (savedTypes) setPersonalityTypes(JSON.parse(savedTypes));
-    if (savedData) setParticipantData(JSON.parse(savedData));
-    if (savedPdfSettings) setPdfSettings(JSON.parse(savedPdfSettings));
-    if (savedAppSettings) setAppSettings(JSON.parse(savedAppSettings));
+        const [savedMappings, savedTypes, savedData, savedPdfSettings, savedAppSettings] = await Promise.all([
+          loadWithMigration('elementMappings'),
+          loadWithMigration('personalityTypes'),
+          loadWithMigration('participantData'),
+          loadWithMigration('pdfSettings'),
+          loadWithMigration('appSettings'),
+        ]);
+
+        if (savedMappings) setElementMappings(savedMappings);
+        if (savedTypes) setPersonalityTypes(savedTypes);
+        if (savedData) setParticipantData(savedData);
+        if (savedPdfSettings) setPdfSettings(savedPdfSettings);
+        if (savedAppSettings) setAppSettings(savedAppSettings);
+      } catch (e) {
+        console.error('Failed to load data:', e);
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+    loadData();
   }, []);
 
-  // Save to localStorage when data changes
+  // Save to localForage when data changes (only after initial load)
   useEffect(() => {
-    localStorage.setItem('elementMappings', JSON.stringify(elementMappings));
-  }, [elementMappings]);
+    if (isLoaded) localforage.setItem('elementMappings', elementMappings);
+  }, [elementMappings, isLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('personalityTypes', JSON.stringify(personalityTypes));
-  }, [personalityTypes]);
+    if (isLoaded) localforage.setItem('personalityTypes', personalityTypes);
+  }, [personalityTypes, isLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('participantData', JSON.stringify(participantData));
-  }, [participantData]);
+    if (isLoaded) localforage.setItem('participantData', participantData);
+  }, [participantData, isLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('pdfSettings', JSON.stringify(pdfSettings));
-  }, [pdfSettings]);
+    if (isLoaded) localforage.setItem('pdfSettings', pdfSettings);
+  }, [pdfSettings, isLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('appSettings', JSON.stringify(appSettings));
-  }, [appSettings]);
+    if (isLoaded) localforage.setItem('appSettings', appSettings);
+  }, [appSettings, isLoaded]);
 
   const calculateProfiles = () => {
     if (!participantData.length || !elementMappings.length || !personalityTypes.length) {
@@ -237,27 +264,31 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const resetParticipantData = () => {
     setParticipantData([]);
     setParticipantProfiles([]);
-    localStorage.removeItem('participantData');
+    localforage.removeItem('participantData');
   };
 
   const resetElementMappings = () => {
     setElementMappings([]);
-    localStorage.removeItem('elementMappings');
+    localforage.removeItem('elementMappings');
   };
 
   const resetPersonalityTypes = () => {
     setPersonalityTypes([]);
-    localStorage.removeItem('personalityTypes');
+    localforage.removeItem('personalityTypes');
   };
 
   const resetPDFSettings = () => {
     setPdfSettings(DEFAULT_PDF_SETTINGS);
-    localStorage.setItem('pdfSettings', JSON.stringify(DEFAULT_PDF_SETTINGS));
+    localforage.setItem('pdfSettings', DEFAULT_PDF_SETTINGS);
   };
 
   useEffect(() => {
     calculateProfiles();
   }, [participantData, elementMappings, personalityTypes, distributionMode]);
+
+  if (!isLoaded) {
+    return null;
+  }
 
   return (
     <DataContext.Provider
