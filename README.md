@@ -1,73 +1,78 @@
-# Welcome to your Lovable project
+# מערכת ניתוח אישיות - 4 יסודות
 
-## Project info
+מערכת לניתוח פרופילי אישיות על בסיס 4 יסודות הבריאה, שרצה **באופן מלא על המחשב שלך — אופליין**.
 
-**URL**: https://lovable.dev/projects/9b4de346-e627-4ad2-bd03-56304cb4a57c
+---
 
-## How can I edit this code?
+## 🖥️ הפעלה אופליין על המחשב שלך
 
-There are several ways of editing your application.
+המערכת עובדת **ללא אינטרנט וללא שרת**. כל הנתונים (קבצי האקסל שאתה מעלה, ההגדרות
+והתוצאות) נשמרים מקומית על המחשב בלבד — שום דבר לא נשלח לאינטרנט.
 
-**Use Lovable**
+> ℹ️ צריך חיבור לאינטרנט **פעם אחת בלבד** — בהתקנה/בנייה הראשונה. אחרי זה המערכת
+> רצה לגמרי אופליין, גם בלי חיבור לרשת.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/9b4de346-e627-4ad2-bd03-56304cb4a57c) and start prompting.
+### שלב מקדים (חד-פעמי): התקנת Node.js
 
-Changes made via Lovable will be committed automatically to this repo.
+1. היכנס ל‑https://nodejs.org
+2. הורד את גרסת ה‑**LTS** והתקן (הבא → הבא → סיום).
 
-**Use your preferred IDE**
+זהו. את זה עושים פעם אחת בלבד.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Windows — שתי אפשרויות
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+לאחר שהורדת/שכפלת את התיקייה של הפרויקט למחשב:
 
-Follow these steps:
+**אפשרות א׳ — יצירת קובץ הפעלה קבוע (מומלץ):**
+
+- לחיצה כפולה על **`BUILD-EXE.bat`**.
+- בסיום נפתחת תיקיית `release` ובה:
+  - קובץ מתקין רגיל (`...Setup.exe`) — התקנה עם קיצור דרך בשולחן העבודה.
+  - **`ElementalSoulScribe-Portable.exe`** — גרסה ניידת שרצה מיד בלי התקנה,
+    אפשר אפילו להעתיק ל‑Disk‑on‑Key ולהריץ מכל מחשב.
+
+**אפשרות ב׳ — הפעלה מהירה בלי ליצור קובץ EXE:**
+
+- לחיצה כפולה על **`RUN.bat`** — המערכת נבנית ונפתחת בחלון משלה.
+
+### macOS / Linux
+
+פתח מסוף (Terminal) בתיקיית הפרויקט והרץ אחת מהפקודות:
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+./run-app.sh        # בונה ומריץ את המערכת מיד
+./build-app.sh      # יוצר קובץ הפעלה בתיקייה release/ (‎.dmg ב‑macOS, ‎.AppImage ב‑Linux)
 ```
 
-**Edit a file directly in GitHub**
+> אם קובץ ה‑‎.sh לא רץ, תן לו הרשאת הרצה פעם אחת: `chmod +x run-app.sh build-app.sh`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## 🔧 מידע טכני
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- **מבנה:** Vite + React + TypeScript + Tailwind + shadcn-ui, עטוף ב‑Electron
+  לאפליקציית שולחן עבודה.
+- **אחסון נתונים:** IndexedDB דרך `localForage` — כל המידע נשמר מקומית בתוך
+  האפליקציה, ללא שרת וללא ענן.
+- **הפעלה אופליין:** האפליקציה מוגשת דרך סכמה מותאמת ובטוחה (`app://`) במקום
+  `file://`, כדי ש‑`fetch()` (טעינת הפונטים לייצוא PDF) וה‑IndexedDB יעבדו בדיוק
+  כמו בדפדפן — כולל שמירת נתונים יציבה בין הפעלות.
 
-## What technologies are used for this project?
+### פקודות npm
 
-This project is built with:
+```sh
+npm install            # התקנת רכיבים (פעם ראשונה)
+npm run dev            # הרצת שרת פיתוח בדפדפן (http://localhost:8080)
+npm run build          # בניית גרסת ווב סטטית לתיקייה dist/
+npm run electron:dev   # הרצת אפליקציית שולחן העבודה (Electron)
+npm run electron:build # בניית קובץ הפעלה מותקן לתיקייה release/
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## עריכה ופיתוח
 
-Simply open [Lovable](https://lovable.dev/projects/9b4de346-e627-4ad2-bd03-56304cb4a57c) and click on Share -> Publish.
+**Lovable:** ניתן לערוך גם דרך [פרויקט ה‑Lovable](https://lovable.dev/projects/9b4de346-e627-4ad2-bd03-56304cb4a57c).
+שינויים ב‑Lovable נשמרים אוטומטית ל‑repo, ושינויים שנדחפים ל‑repo משתקפים ב‑Lovable.
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+**IDE מקומי:** שכפל את ה‑repo, ערוך, ודחוף שינויים — הדרישה היחידה היא Node.js & npm.
