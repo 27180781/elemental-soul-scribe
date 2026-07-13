@@ -2,6 +2,11 @@
   "name": "vite_react_shadcn_ts",
   "private": true,
   "version": "1.0.0",
+  "description": "מערכת ניתוח אישיות - 4 יסודות (אפליקציית שולחן עבודה אופליין)",
+  "author": {
+    "name": "Elemental Soul Scribe",
+    "email": "app@elemental-soul-scribe.local"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
